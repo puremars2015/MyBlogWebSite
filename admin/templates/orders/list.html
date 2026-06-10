@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}訂單列表{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>訂單列表</h2>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>訂單編號</th>
+                <th>會員</th>
+                <th>商品</th>
+                <th>金額</th>
+                <th>狀態</th>
+                <th>時間</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.order_number }}</td>
+                <td>{{ order.member.display_name if order.member else '訪客' }}</td>
+                <td>{{ order.product.name if order.product else '已刪除' }}</td>
+                <td>${{ "%.2f"|format(order.total_price) }}</td>
+                <td>
+                    <span class="status-badge status-{{ order.status }}">
+                        {{ order.status }}
+                    </span>
+                </td>
+                <td>{{ order.created_at.strftime('%Y-%m-%d') if order.created_at else '-' }}</td>
+                <td>
+                    <a href="{{ url_for('orders_detail', order_id=order.id) }}" class="btn-link">查看</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" class="empty-state">尚無訂單</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if total_pages > 1 %}
+<nav class="pagination">
+    {% if page > 1 %}
+        <a href="{{ url_for('orders_list', page=page-1) }}" class="page-link">上一頁</a>
+    {% endif %}
+    <span class="page-info">第 {{ page }} 頁 / 共 {{ total_pages }} 頁</span>
+    {% if page < total_pages %}
+        <a href="{{ url_for('orders_list', page=page+1) }}" class="page-link">下一頁</a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "shop_base.html" %}
+
+{% block title %}{{ category.name }} - 拾光選物{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1 class="page-title">{{ category.name }}</h1>
+    {% if category.description %}
+    <p class="page-desc">{{ category.description }}</p>
+    {% endif %}
+</section>
+
+<div class="product-grid">
+    {% for product in products %}
+    <a href="{{ url_for('shop_product_detail', slug=product.slug) }}" class="product-card">
+        {% if product.image_url %}
+        <div class="product-image" style="background-image: url('{{ product.image_url }}')"></div>
+        {% else %}
+        <div class="product-image placeholder">
+            <span class="placeholder-text">{{ product.name }}</span>
+        </div>
+        {% endif %}
+        <div class="product-content">
+            <h3 class="product-name">{{ product.name }}</h3>
+            <p class="product-price">${{ "%.2f"|format(product.price) }}</p>
+            {% if product.stock < 5 %}
+            <span class="stock-badge low">僅剩 {{ product.stock }} 件</span>
+            {% endif %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+{% if total > per_page %}
+<nav class="pagination">
+    {% set total_pages = (total / per_page)|round(0, 'ceil')|int %}
+    {% if page > 1 %}
+    <a href="{{ url_for('shop_category', category_slug=category.slug, page=page-1) }}" class="page-link">&laquo; 上一頁</a>
+    {% endif %}
+    <span class="page-info">第 {{ page }} / {{ total_pages }} 頁</span>
+    {% if page < total_pages %}
+    <a href="{{ url_for('shop_category', category_slug=category.slug, page=page+1) }}" class="page-link">下一頁 &raquo;</a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

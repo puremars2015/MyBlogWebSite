@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}文章列表{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>文章列表</h2>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>標題</th>
+                <th>分類</th>
+                <th>狀態</th>
+                <th>發布時間</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in posts %}
+            <tr>
+                <td>{{ post.id }}</td>
+                <td>
+                    <a href="{{ url_for('posts_detail', post_id=post.id) }}">{{ post.title }}</a>
+                </td>
+                <td>{{ post.category.name if post.category else '-' }}</td>
+                <td>
+                    <span class="status-badge status-{{ 'published' if post.is_published else 'draft' }}">
+                        {{ '已發布' if post.is_published else '草稿' }}
+                    </span>
+                </td>
+                <td>{{ post.published_at.strftime('%Y-%m-%d') if post.published_at else '-' }}</td>
+                <td>
+                    <a href="{{ url_for('posts_detail', post_id=post.id) }}" class="btn-link">查看</a>
+                    <form method="POST" action="{{ url_for('posts_toggle_publish', post_id=post.id) }}" style="display:inline;">
+                        <button type="submit" class="btn-link">
+                            {{ '設為草稿' if post.is_published else '發布' }}
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="empty-state">尚無文章</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if total_pages > 1 %}
+<nav class="pagination">
+    {% if page > 1 %}
+        <a href="{{ url_for('posts_list', page=page-1) }}" class="page-link">上一頁</a>
+    {% endif %}
+    <span class="page-info">第 {{ page }} 頁 / 共 {{ total_pages }} 頁</span>
+    {% if page < total_pages %}
+        <a href="{{ url_for('posts_list', page=page+1) }}" class="page-link">下一頁</a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

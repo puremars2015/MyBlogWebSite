@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}管理員列表 - 後台{% endblock %}
+{% block content %}
+<h1 class="page-title">管理員</h1>
+
+<div class="actions-bar">
+    <a href="{{ url_for('admins_new') }}" class="btn btn-primary">+ 新增管理員</a>
+</div>
+
+<div class="table-wrapper">
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>帳號</th>
+            <th>姓名</th>
+            <th>Email</th>
+            <th>角色</th>
+            <th>狀態</th>
+            <th>最後登入</th>
+            <th>建立時間</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in admins %}
+        <tr class="{{ 'row-disabled' if not a.is_active else '' }}">
+            <td>{{ a.id }}</td>
+            <td><strong>{{ a.username }}</strong></td>
+            <td>{{ a.display_name or '-' }}</td>
+            <td>{{ a.email }}</td>
+            <td><span class="role-badge role-{{ a.role }}">{{ a.role }}</span></td>
+            <td>{% if a.is_active %}<span class="status-on">啟用</span>{% else %}<span class="status-off">停用</span>{% endif %}</td>
+            <td>{{ a.last_login_at.strftime('%Y-%m-%d %H:%M') if a.last_login_at else '從未' }}</td>
+            <td>{{ a.created_at.strftime('%Y-%m-%d') if a.created_at else '-' }}</td>
+            <td class="actions">
+                <a href="{{ url_for('admins_detail', admin_id=a.id) }}" class="btn-link">檢視</a>
+                <a href="{{ url_for('admins_edit', admin_id=a.id) }}" class="btn-link">編輯</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% if total > 20 %}
+<div class="pagination">
+    {% if page > 1 %}<a href="?page={{ page-1 }}" class="page-link">« 上一頁</a>{% endif %}
+    <span class="page-current">第 {{ page }} 頁</span>
+    {% if page * 20 < total %}<a href="?page={{ page+1 }}" class="page-link">下一頁 »</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

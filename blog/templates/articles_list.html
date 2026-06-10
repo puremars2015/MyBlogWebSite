@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}文章列表 - 拾光選物{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1 class="page-title">文章</h1>
+</section>
+
+<div class="articles-list">
+    {% for post in posts %}
+    <a href="{{ url_for('article_detail', slug=post.slug) }}" class="article-item">
+        {% if post.cover_image_url %}
+        <div class="article-thumb" style="background-image: url('{{ post.cover_image_url }}')"></div>
+        {% else %}
+        <div class="article-thumb placeholder"></div>
+        {% endif %}
+        <div class="article-info">
+            {% if post.category %}
+            <span class="article-badge">{{ post.category.name }}</span>
+            {% endif %}
+            <h2 class="article-title">{{ post.title }}</h2>
+            <p class="article-excerpt">{{ post.excerpt or '' }}</p>
+            <time class="article-date">{{ post.published_at.strftime('%Y-%m-%d') if post.published_at else '' }}</time>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+{% if total > per_page %}
+<nav class="pagination">
+    {% set total_pages = (total / per_page)|round(0, 'ceil')|int %}
+    {% if page > 1 %}
+    <a href="{{ url_for('articles_list', page=page-1) }}" class="page-link">&laquo; 上一頁</a>
+    {% endif %}
+    <span class="page-info">第 {{ page }} / {{ total_pages }} 頁</span>
+    {% if page < total_pages %}
+    <a href="{{ url_for('articles_list', page=page+1) }}" class="page-link">下一頁 &raquo;</a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

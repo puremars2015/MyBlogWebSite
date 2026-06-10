@@ -9,6 +9,7 @@ services:
     depends_on:
       - blog
       - shop
+      - admin
     networks:
       - app-network
     volumes:
@@ -26,8 +27,12 @@ services:
       - DB_NAME=BlogShopDB
       - DB_USER=sa
       - DB_PASSWORD=${SA_PASSWORD}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - SESSION_COOKIE_DOMAIN=.localhost
+      - EXPECTED_USER_TYPE=member
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
     expose:
@@ -45,15 +50,49 @@ services:
       - DB_NAME=BlogShopDB
       - DB_USER=sa
       - DB_PASSWORD=${SA_PASSWORD}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - SESSION_COOKIE_DOMAIN=.localhost
+      - EXPECTED_USER_TYPE=member
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
     expose:
       - "5001"
 
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    image: myblogwebsite-admin
+    environment:
+      - FLASK_ENV=production
+      - DB_HOST=db
+      - DB_PORT=1433
+      - DB_NAME=BlogShopDB
+      - DB_USER=sa
+      - DB_PASSWORD=${SA_PASSWORD}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - SESSION_COOKIE_DOMAIN=.localhost
+      - EXPECTED_USER_TYPE=admin
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    expose:
+      - "5002"
+    # 開發用:直接把 port 5002 expose 出來,繞過 .local 子網域的瀏覽器 cookie 怪問題
+    # 上正式環境記得拿掉這段
+    ports:
+      - "5002:5002"
+
   db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    image: myblogwebsite-db
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=${SA_PASSWORD}
@@ -61,15 +100,16 @@ services:
     ports:
       - "1433:1433"
     volumes:
-      - ./init-scripts:/init-scripts
+      - ./init-scripts:/docker-entrypoint-initdb.d
       - sqlserver-data:/var/opt/mssql
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${SA_PASSWORD}", "-Q", "SELECT 1"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$SA_PASSWORD\" -Q 'SELECT 1' -C -No || exit 1"]
       interval: 10s
-      timeout: 3s
-      retries: 5
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
 networks:
   app-network:

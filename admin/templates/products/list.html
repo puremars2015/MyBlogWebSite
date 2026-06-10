@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}商品列表{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>商品列表</h2>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>名稱</th>
+                <th>分類</th>
+                <th>價格</th>
+                <th>庫存</th>
+                <th>狀態</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.id }}</td>
+                <td>
+                    <a href="{{ url_for('products_detail', product_id=product.id) }}">{{ product.name }}</a>
+                </td>
+                <td>{{ product.category.name if product.category else '-' }}</td>
+                <td>${{ "%.2f"|format(product.price) }}</td>
+                <td>{{ product.stock }}</td>
+                <td>
+                    <span class="status-badge status-{{ 'published' if product.is_active else 'draft' }}">
+                        {{ '上架' if product.is_active else '下架' }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{{ url_for('products_detail', product_id=product.id) }}" class="btn-link">查看</a>
+                    <form method="POST" action="{{ url_for('products_toggle_active', product_id=product.id) }}" style="display:inline;">
+                        <button type="submit" class="btn-link">
+                            {{ '下架' if product.is_active else '上架' }}
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="empty-state">尚無商品</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if total_pages > 1 %}
+<nav class="pagination">
+    {% if page > 1 %}
+        <a href="{{ url_for('products_list', page=page-1) }}" class="page-link">上一頁</a>
+    {% endif %}
+    <span class="page-info">第 {{ page }} 頁 / 共 {{ total_pages }} 頁</span>
+    {% if page < total_pages %}
+        <a href="{{ url_for('products_list', page=page+1) }}" class="page-link">下一頁</a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

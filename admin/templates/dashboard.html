@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}儀表板{% endblock %}
+
+{% block content %}
+<div class="page-header dashboard-header">
+    <div>
+        <p class="eyebrow">Admin Overview</p>
+        <h2>儀表板</h2>
+        <p class="page-description">快速查看內容、商品、訂單與會員狀態。</p>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <a href="{{ url_for('orders_list') }}" class="stat-card stat-card-featured">
+        <div class="stat-topline">
+            <div class="stat-label">訂單總數</div>
+            <span class="stat-icon">$</span>
+        </div>
+        <div class="stat-value">{{ order_count }}</div>
+        <div class="stat-breakdown">
+            <span class="stat-pending">待付款 {{ order_pending }}</span>
+            <span class="stat-paid">已付款 {{ order_paid }}</span>
+            <span class="stat-shipped">已出貨 {{ order_shipped }}</span>
+            <span class="stat-done">已完成 {{ order_done }}</span>
+        </div>
+    </a>
+
+    <a href="{{ url_for('posts_list') }}" class="stat-card">
+        <div class="stat-topline">
+            <div class="stat-label">文章總數</div>
+            <span class="stat-icon">P</span>
+        </div>
+        <div class="stat-value">{{ post_count }}</div>
+        <div class="stat-breakdown">
+            <span class="stat-published">已發布 {{ post_published }}</span>
+            <span class="stat-draft">草稿 {{ post_draft }}</span>
+        </div>
+    </a>
+
+    <a href="{{ url_for('products_list') }}" class="stat-card">
+        <div class="stat-topline">
+            <div class="stat-label">商品總數</div>
+            <span class="stat-icon">S</span>
+        </div>
+        <div class="stat-value">{{ product_count }}</div>
+        <div class="stat-breakdown">
+            <span class="stat-published">上架 {{ product_active }}</span>
+            <span class="stat-draft">下架 {{ product_inactive }}</span>
+        </div>
+    </a>
+
+    <a href="{{ url_for('members_list') }}" class="stat-card">
+        <div class="stat-topline">
+            <div class="stat-label">會員總數</div>
+            <span class="stat-icon">M</span>
+        </div>
+        <div class="stat-value">{{ member_count }}</div>
+        <div class="stat-breakdown">
+            <span class="stat-published">啟用 {{ member_active }}</span>
+            <span class="stat-draft">停用 {{ member_disabled }}</span>
+        </div>
+    </a>
+
+    <a href="{{ url_for('admins_list') }}" class="stat-card">
+        <div class="stat-topline">
+            <div class="stat-label">管理員總數</div>
+            <span class="stat-icon">A</span>
+        </div>
+        <div class="stat-value">{{ admin_count }}</div>
+        <div class="stat-breakdown">
+            <span>管理帳號</span>
+        </div>
+    </a>
+</div>
+
+<div class="dashboard-panels">
+    <section class="dashboard-panel">
+        <p class="eyebrow">Quick Actions</p>
+        <h3>常用管理</h3>
+        <div class="quick-actions">
+            <a href="{{ url_for('orders_list') }}">查看訂單</a>
+            <a href="{{ url_for('products_list') }}">管理商品</a>
+            <a href="{{ url_for('posts_list') }}">管理文章</a>
+            <a href="{{ url_for('members_list') }}">會員列表</a>
+        </div>
+    </section>
+
+    <section class="dashboard-panel dashboard-panel-muted">
+        <p class="eyebrow">Status</p>
+        <h3>營運摘要</h3>
+        <p>目前共有 {{ post_published }} 篇已發布文章、{{ product_active }} 個上架商品，以及 {{ member_active }} 位啟用會員。</p>
+    </section>
+</div>
+{% endblock %}

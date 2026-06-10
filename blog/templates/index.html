@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}拾光選物 - 首頁{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1 class="hero-title">拾光選物</h1>
+    <p class="hero-tagline">慢慢生活,好好選物</p>
+</section>
+
+<section class="section">
+    <h2 class="section-title">最新文章</h2>
+    <div class="card-grid">
+        {% for post in posts %}
+        <a href="{{ url_for('article_detail', slug=post.slug) }}" class="card">
+            {% if post.cover_image_url %}
+            <div class="card-image" style="background-image: url('{{ post.cover_image_url }}')"></div>
+            {% else %}
+            <div class="card-image placeholder">
+                <span class="placeholder-text">{{ post.title }}</span>
+            </div>
+            {% endif %}
+            <div class="card-content">
+                {% if post.category %}
+                <span class="card-badge">{{ post.category.name }}</span>
+                {% endif %}
+                <h3 class="card-title">{{ post.title }}</h3>
+                <p class="card-excerpt">{{ post.excerpt or '' }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="section">
+    <h2 class="section-title">本月精選</h2>
+    <div class="product-grid">
+        {% for product in products %}
+        <a href="{{ shop_url(product.slug) }}" class="product-card">
+            {% if product.image_url %}
+            <div class="product-image" style="background-image: url('{{ product.image_url }}')"></div>
+            {% else %}
+            <div class="product-image placeholder">
+                <span class="placeholder-text">{{ product.name }}</span>
+            </div>
+            {% endif %}
+            <div class="product-content">
+                <h3 class="product-name">{{ product.name }}</h3>
+                <p class="product-price">${{ "%.2f"|format(product.price) }}</p>
+                <p class="product-desc">{{ product.description[:80] if product.description else '' }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

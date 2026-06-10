@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}我的帳號 - 拾光選物{% endblock %}
+{% block content %}
+<div class="profile-page">
+    <header class="profile-header">
+        <div class="profile-avatar">
+            {% if member.avatar_url %}
+            <img src="{{ member.avatar_url }}" alt="{{ member.display_name }}">
+            {% else %}
+            <div class="avatar-placeholder">{{ member.display_name[0] if member.display_name else member.username[0] }}</div>
+            {% endif %}
+        </div>
+        <div class="profile-info">
+            <h1>{{ member.display_name or member.username }}</h1>
+            <p class="profile-username">@{{ member.username }}</p>
+            <p class="profile-email">{{ member.email }}</p>
+            <p class="profile-meta">加入時間:{{ member.created_at.strftime('%Y-%m-%d') if member.created_at else '-' }}</p>
+        </div>
+    </header>
+
+    <section class="profile-section">
+        <h2>編輯個人資料</h2>
+        <form method="post" action="{{ url_for('member_me_edit') }}" class="profile-form">
+            <div class="form-row">
+                <label for="display_name">顯示名稱</label>
+                <input type="text" id="display_name" name="display_name" value="{{ member.display_name or '' }}" maxlength="100">
+            </div>
+            <div class="form-row">
+                <label for="avatar_url">頭像 URL</label>
+                <input type="url" id="avatar_url" name="avatar_url" value="{{ member.avatar_url or '' }}" placeholder="https://...">
+            </div>
+            <div class="form-row">
+                <label for="bio">自我介紹</label>
+                <textarea id="bio" name="bio" rows="4">{{ member.bio or '' }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">儲存</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

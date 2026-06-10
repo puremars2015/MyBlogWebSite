@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理員列表 - 後台 - 拾光選物</title>
+    <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>後台管理</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item ">
+                    <span class="nav-icon">◈</span> 儀表板
+                </a>
+                <a href="/posts" class="nav-item ">
+                    <span class="nav-icon">◇</span> 文章
+                </a>
+                <a href="/products" class="nav-item ">
+                    <span class="nav-icon">◇</span> 商品
+                </a>
+                <a href="/orders" class="nav-item ">
+                    <span class="nav-icon">◇</span> 訂單
+                </a>
+                <a href="/members" class="nav-item ">
+                    <span class="nav-icon">◇</span> 會員
+                </a>
+                <a href="/admins" class="nav-item active">
+                    <span class="nav-icon">◇</span> 管理員
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="admin-info">
+                    <span class="admin-name">站台管理員</span>
+                    <span class="admin-role">(superadmin)</span>
+                </div>
+                <a href="/logout" class="logout-link">登出</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            
+                
+            
+
+            
+<h1 class="page-title">管理員</h1>
+
+<div class="actions-bar">
+    <a href="/admins/new" class="btn btn-primary">+ 新增管理員</a>
+</div>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>帳號</th>
+            <th>姓名</th>
+            <th>Email</th>
+            <th>角色</th>
+            <th>狀態</th>
+            <th>最後登入</th>
+            <th>建立時間</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        
+        <tr class="">
+            <td>1</td>
+            <td><strong>admin</strong></td>
+            <td>站台管理員</td>
+            <td>admin@example.com</td>
+            <td><span class="role-badge role-superadmin">superadmin</span></td>
+            <td><span class="status-on">啟用</span></td>
+            <td>2026-06-10 07:40</td>
+            <td>2026-06-10</td>
+            <td class="actions">
+                <a href="/admins/1" class="btn-link">檢視</a>
+                <a href="/admins/1/edit" class="btn-link">編輯</a>
+            </td>
+        </tr>
+        
+    </tbody>
+</table>
+
+
+
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - 拾光選物{% endblock %}
+
+{% block content %}
+<article class="article-detail">
+    <header class="article-header">
+        {% if post.category %}
+        <a href="{{ url_for('article_category', category_slug=post.category.slug) }}" class="article-badge">{{ post.category.name }}</a>
+        {% endif %}
+        <h1 class="article-title">{{ post.title }}</h1>
+        <time class="article-date">{{ post.published_at.strftime('%Y-%m-%d') if post.published_at else '' }}</time>
+        {% if post.tags %}
+        <div class="article-tags">
+            {% for tag in post.tags %}
+            <a href="{{ url_for('article_tag', tag_name=tag.name) }}" class="tag-link">{{ tag.name }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </header>
+
+    {% if post.cover_image_url %}
+    <div class="article-cover" style="background-image: url('{{ post.cover_image_url }}')"></div>
+    {% endif %}
+
+    <div class="article-body">
+        {{ post.content }}
+    </div>
+</article>
+
+{% if products %}
+<section class="related-products">
+    <h2 class="section-title">相關商品</h2>
+    <div class="product-grid">
+        {% for product in products %}
+        <a href="{{ shop_url(product.slug) }}" class="product-card">
+            {% if product.image_url %}
+            <div class="product-image" style="background-image: url('{{ product.image_url }}')"></div>
+            {% else %}
+            <div class="product-image placeholder"></div>
+            {% endif %}
+            <div class="product-content">
+                <h3 class="product-name">{{ product.name }}</h3>
+                <p class="product-price">${{ "%.2f"|format(product.price) }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if recommended_posts %}
+<section class="related-articles">
+    <h2 class="section-title">相關文章</h2>
+    <div class="card-grid">
+        {% for rp in recommended_posts %}
+        <a href="{{ url_for('article_detail', slug=rp.slug) }}" class="card">
+            {% if rp.cover_image_url %}
+            <div class="card-image" style="background-image: url('{{ rp.cover_image_url }}')"></div>
+            {% else %}
+            <div class="card-image placeholder"></div>
+            {% endif %}
+            <div class="card-content">
+                <h3 class="card-title">{{ rp.title }}</h3>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

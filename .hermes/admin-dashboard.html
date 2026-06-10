@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>儀表板 - 拾光選物</title>
+    <style>/* Admin 後台樣式 — 沿用 cream + terracotta 配色 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+    background: #FAF7F2;
+    color: #2C2419;
+    line-height: 1.6;
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 240px;
+    background: #2C2419;
+    color: #FAF7F2;
+    padding: 24px 0;
+    flex-shrink: 0;
+}
+
+.sidebar-brand {
+    padding: 0 24px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 16px;
+}
+
+.sidebar-brand h1 {
+    font-size: 1.3em;
+    color: #FAF7F2;
+    margin: 0;
+}
+
+.sidebar-brand .user {
+    font-size: 0.85em;
+    color: #C5B5A3;
+    margin-top: 4px;
+}
+
+.sidebar-brand a {
+    color: #E8A87C;
+    text-decoration: none;
+    font-size: 0.8em;
+    display: inline-block;
+    margin-top: 4px;
+}
+
+.sidebar-nav { list-style: none; }
+
+.sidebar-nav a {
+    display: block;
+    padding: 12px 24px;
+    color: #C5B5A3;
+    text-decoration: none;
+    transition: background 0.15s;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-nav a:hover, .sidebar-nav a.active {
+    background: rgba(255,255,255,0.05);
+    color: #FAF7F2;
+    border-left-color: #A8553A;
+}
+
+/* Main */
+.main {
+    flex: 1;
+    padding: 32px 48px;
+    overflow-x: auto;
+}
+
+.page-title {
+    font-size: 1.8em;
+    color: #2C2419;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #A8553A;
+}
+
+/* Flash messages */
+.flash {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.flash-success { background: #D4EDDA; color: #155724; border-left: 4px solid #28A745; }
+.flash-error { background: #F8D7DA; color: #721C24; border-left: 4px solid #DC3545; }
+.flash-info { background: #D1ECF1; color: #0C5460; border-left: 4px solid #17A2B8; }
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9em;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+}
+
+.btn-primary { background: #A8553A; color: #FAF7F2; }
+.btn-primary:hover { background: #8E4530; }
+.btn-secondary { background: #E8E0D3; color: #2C2419; }
+.btn-secondary:hover { background: #D4C9B6; }
+.btn-danger { background: #DC3545; color: white; }
+.btn-danger:hover { background: #C82333; }
+.btn-link { color: #A8553A; text-decoration: none; margin-right: 8px; }
+.btn-link:hover { text-decoration: underline; }
+
+.actions-bar { margin-bottom: 16px; }
+
+/* Dashboard stat cards */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #E8E0D3;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+.stat-label {
+    font-size: 0.85em;
+    color: #6B5D4F;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.stat-number {
+    font-size: 2.2em;
+    font-weight: 600;
+    color: #2C2419;
+    line-height: 1;
+}
+
+.stat-detail {
+    font-size: 0.8em;
+    color: #8B7B6B;
+    margin-top: 8px;
+}
+
+/* Tables */
+.data-table {
+    width: 100%;
+    background: white;
+    border-collapse: collapse;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #E8E0D3;
+}
+
+.data-table th {
+    background: #F0E8DA;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.85em;
+    color: #2C2419;
+    font-weight: 600;
+    border-bottom: 2px solid #E8E0D3;
+}
+
+.data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #F0E8DA;
+    font-size: 0.9em;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover { background: #FAF7F2; }
+.data-table tr.row-disabled { opacity: 0.5; }
+
+.data-table .actions { white-space: nowrap; }
+
+/* Status / role badges */
+.status-on { color: #28A745; font-weight: 600; }
+.status-off { color: #DC3545; font-weight: 600; }
+
+.role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 600;
+    background: #E8E0D3;
+    color: #2C2419;
+}
+
+.role-superadmin { background: #A8553A; color: #FAF7F2; }
+.role-admin { background: #D4C9B6; color: #2C2419; }
+.role-editor { background: #C5D5C5; color: #2C2419; }
+
+/* Forms */
+.admin-form {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid #E8E0D3;
+    max-width: 600px;
+}
+
+.form-row { margin-bottom: 16px; }
+.form-row label { display: block; font-weight: 600; margin-bottom: 6px; color: #2C2419; }
+.form-row input[type=text], .form-row input[type=email], .form-row input[type=password], .form-row select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #E8E0D3;
+    border-radius: 4px;
+    font-size: 0.95em;
+    font-family: inherit;
+    background: white;
+}
+.form-row input:focus, .form-row select:focus { outline: 2px solid #A8553A; outline-offset: -1px; }
+.form-row small { display: block; color: #8B7B6B; margin-top: 4px; font-size: 0.8em; }
+
+.form-actions { margin-top: 24px; display: flex; gap: 8px; }
+
+/* Detail view */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+}
+
+.detail-card {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid #E8E0D3;
+}
+
+.detail-card h2 { font-size: 1.2em; margin-bottom: 16px; color: #2C2419; }
+.detail-card h3 { font-size: 1em; margin: 16px 0 8px; color: #2C2419; }
+
+.detail-card dl { display: grid; grid-template-columns: 140px 1fr; gap: 8px 16px; }
+.detail-card dt { color: #6B5D4F; font-weight: 600; }
+.detail-card dd { word-break: break-all; }
+
+.action-buttons { display: flex; flex-direction: column; gap: 8px; }
+.inline-form { display: flex; gap: 8px; margin-top: 8px; }
+.inline-form input { flex: 1; padding: 6px 10px; border: 1px solid #E8E0D3; border-radius: 4px; }
+.hint { color: #8B7B6B; font-size: 0.85em; font-style: italic; }
+
+/* Pagination */
+.pagination {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    align-items: center;
+}
+.page-link { padding: 6px 12px; border: 1px solid #E8E0D3; border-radius: 4px; text-decoration: none; color: #2C2419; background: white; }
+.page-link:hover { background: #F0E8DA; }
+.page-current { color: #6B5D4F; }
+
+/* Login */
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #FAF7F2;
+}
+
+.login-card {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    border: 1px solid #E8E0D3;
+    width: 360px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+.login-card h1 {
+    font-size: 1.5em;
+    color: #2C2419;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.login-card .subtitle {
+    text-align: center;
+    color: #8B7B6B;
+    margin-bottom: 24px;
+    font-size: 0.9em;
+}
+
+.login-card .form-row { margin-bottom: 16px; }
+.login-card button { width: 100%; margin-top: 8px; }
+
+@media (max-width: 768px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; padding: 12px 0; }
+    .sidebar-nav { display: flex; overflow-x: auto; }
+    .sidebar-nav a { white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; }
+    .sidebar-nav a:hover, .sidebar-nav a.active { border-left: none; border-bottom-color: #A8553A; }
+    .main { padding: 16px; }
+    .detail-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>後台管理</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item active">
+                    <span class="nav-icon">◈</span> 儀表板
+                </a>
+                <a href="/posts" class="nav-item ">
+                    <span class="nav-icon">◇</span> 文章
+                </a>
+                <a href="/products" class="nav-item ">
+                    <span class="nav-icon">◇</span> 商品
+                </a>
+                <a href="/orders" class="nav-item ">
+                    <span class="nav-icon">◇</span> 訂單
+                </a>
+                <a href="/members" class="nav-item ">
+                    <span class="nav-icon">◇</span> 會員
+                </a>
+                <a href="/admins" class="nav-item ">
+                    <span class="nav-icon">◇</span> 管理員
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="admin-info">
+                    <span class="admin-name">站台管理員</span>
+                    <span class="admin-role">(superadmin)</span>
+                </div>
+                <a href="/logout" class="logout-link">登出</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            
+                
+            
+
+            
+<div class="page-header">
+    <h2>儀表板</h2>
+</div>
+
+<div class="stats-grid">
+    <a href="/posts" class="stat-card">
+        <div class="stat-label">文章總數</div>
+        <div class="stat-value">11</div>
+        <div class="stat-breakdown">
+            <span class="stat-published">已發布 8</span>
+            <span class="stat-draft">草稿 3</span>
+        </div>
+    </a>
+
+    <a href="/products" class="stat-card">
+        <div class="stat-label">商品總數</div>
+        <div class="stat-value">13</div>
+        <div class="stat-breakdown">
+            <span class="stat-published">上架 10</span>
+            <span class="stat-draft">下架 3</span>
+        </div>
+    </a>
+
+    <a href="/orders" class="stat-card">
+        <div class="stat-label">訂單總數</div>
+        <div class="stat-value">3</div>
+        <div class="stat-breakdown">
+            <span class="stat-pending">待付款 2</span>
+            <span class="stat-paid">已付款 1</span>
+            <span class="stat-shipped">已出貨 0</span>
+            <span class="stat-done">已完成 0</span>
+        </div>
+    </a>
+
+    <a href="/members" class="stat-card">
+        <div class="stat-label">會員總數</div>
+        <div class="stat-value">4</div>
+        <div class="stat-breakdown">
+            <span class="stat-published">啟用 2</span>
+            <span class="stat-draft">停用 2</span>
+        </div>
+    </a>
+
+    <a href="/admins" class="stat-card">
+        <div class="stat-label">管理員總數</div>
+        <div class="stat-value">1</div>
+        <div class="stat-breakdown">
+            <span>管理帳號</span>
+        </div>
+    </a>
+</div>
+
+        </main>
+    </div>
+</body>
+</html>

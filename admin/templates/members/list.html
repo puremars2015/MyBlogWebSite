@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}會員列表{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>會員列表</h2>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>帳號</th>
+                <th>名稱</th>
+                <th>Email</th>
+                <th>狀態</th>
+                <th>註冊時間</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+            <tr>
+                <td>{{ member.id }}</td>
+                <td>{{ member.username }}</td>
+                <td>{{ member.display_name or '-' }}</td>
+                <td>{{ member.email }}</td>
+                <td>
+                    <span class="status-badge status-{{ 'published' if member.is_active else 'draft' }}">
+                        {{ '啟用' if member.is_active else '停用' }}
+                    </span>
+                </td>
+                <td>{{ member.created_at.strftime('%Y-%m-%d') if member.created_at else '-' }}</td>
+                <td>
+                    <a href="{{ url_for('members_detail', member_id=member.id) }}" class="btn-link">查看</a>
+                    <form method="POST" action="{{ url_for('members_toggle_active', member_id=member.id) }}" style="display:inline;">
+                        <button type="submit" class="btn-link">
+                            {{ '停用' if member.is_active else '啟用' }}
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="empty-state">尚無會員</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if total_pages > 1 %}
+<nav class="pagination">
+    {% if page > 1 %}
+        <a href="{{ url_for('members_list', page=page-1) }}" class="page-link">上一頁</a>
+    {% endif %}
+    <span class="page-info">第 {{ page }} 頁 / 共 {{ total_pages }} 頁</span>
+    {% if page < total_pages %}
+        <a href="{{ url_for('members_list', page=page+1) }}" class="page-link">下一頁</a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

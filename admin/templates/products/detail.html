@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{{ product.name }}</h2>
+    <div class="page-actions">
+        <form method="POST" action="{{ url_for('products_toggle_active', product_id=product.id) }}">
+            <button type="submit" class="btn-secondary">
+                {{ '下架' if product.is_active else '上架' }}
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-main">
+        <div class="detail-section">
+            <h3>商品描述</h3>
+            <p class="product-description">{{ product.description or '無' }}</p>
+        </div>
+
+        {% if product.image_url %}
+        <div class="detail-section">
+            <h3>商品圖片</h3>
+            <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-image">
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="detail-sidebar">
+        <div class="detail-card">
+            <h4>基本資訊</h4>
+            <dl class="detail-list">
+                <dt>ID</dt>
+                <dd>{{ product.id }}</dd>
+                <dt>Slug</dt>
+                <dd>{{ product.slug }}</dd>
+                <dt>分類</dt>
+                <dd>{{ product.category.name if product.category else '未分類' }}</dd>
+                <dt>價格</dt>
+                <dd>${{ "%.2f"|format(product.price) }}</dd>
+                <dt>庫存</dt>
+                <dd>{{ product.stock }}</dd>
+                <dt>狀態</dt>
+                <dd>
+                    <span class="status-badge status-{{ 'published' if product.is_active else 'draft' }}">
+                        {{ '上架' if product.is_active else '下架' }}
+                    </span>
+                </dd>
+                <dt>建立時間</dt>
+                <dd>{{ product.created_at.strftime('%Y-%m-%d %H:%M') if product.created_at else '-' }}</dd>
+                <dt>更新時間</dt>
+                <dd>{{ product.updated_at.strftime('%Y-%m-%d %H:%M') if product.updated_at else '-' }}</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %}

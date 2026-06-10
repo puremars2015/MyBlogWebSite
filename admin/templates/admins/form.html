@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ '編輯' if is_edit else '新增' }}管理員 - 後台{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ '編輯' if is_edit else '新增' }}管理員</h1>
+
+<form method="post" class="admin-form">
+    {% if not is_edit %}
+    <div class="form-row">
+        <label for="username">帳號 *</label>
+        <input type="text" id="username" name="username" required minlength="3" maxlength="100"
+               value="{{ form_data.username if form_data else '' }}">
+        <small>3-100 字元,英數字底線</small>
+    </div>
+    {% endif %}
+
+    <div class="form-row">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" required
+               value="{{ form_data.email if form_data else (admin.email if is_edit else '') }}">
+    </div>
+
+    <div class="form-row">
+        <label for="display_name">顯示名稱</label>
+        <input type="text" id="display_name" name="display_name" maxlength="100"
+               value="{{ form_data.display_name if form_data else (admin.display_name if is_edit else '') }}">
+    </div>
+
+    <div class="form-row">
+        <label for="role">角色 *</label>
+        <select id="role" name="role" required>
+            {% for r in ['superadmin', 'admin', 'editor'] %}
+            <option value="{{ r }}" {% if (form_data and form_data.role == r) or (is_edit and admin.role == r) %}selected{% endif %}>{{ r }}</option>
+            {% endfor %}
+        </select>
+        <small>superadmin 全部權限 / admin 後台管理 / editor 只能編輯</small>
+    </div>
+
+    <div class="form-row">
+        <label>
+            <input type="checkbox" name="is_active" value="1" {% if (form_data and form_data.is_active) or (is_edit and admin.is_active) or (not is_edit and not form_data) %}checked{% endif %}>
+            啟用此帳號
+        </label>
+    </div>
+
+    {% if not is_edit %}
+    <div class="form-row">
+        <label for="password">密碼 *</label>
+        <input type="password" id="password" name="password" required minlength="6">
+        <small>至少 6 字元</small>
+    </div>
+    {% endif %}
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ '更新' if is_edit else '建立' }}</button>
+        <a href="{{ url_for('admins_list') }}" class="btn btn-secondary">取消</a>
+    </div>
+</form>
+{% endblock %}

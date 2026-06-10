@@ -22,4 +22,4 @@ ENV FLASK_APP=app.py
 
 EXPOSE 5001
 
-CMD ["python", "app.py"]
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5001", "app:app"]

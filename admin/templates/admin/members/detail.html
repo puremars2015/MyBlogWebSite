@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.display_name or member.username }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{{ member.display_name or member.username }}</h2>
+    <div class="page-actions">
+        <form method="POST" action="{{ url_for('members_toggle_active', member_id=member.id) }}">
+            <button type="submit" class="btn-secondary">
+                {{ '停用帳號' if member.is_active else '啟用帳號' }}
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-main">
+        <div class="detail-section">
+            <h3>個人資料</h3>
+            {% if member.bio %}
+            <p class="member-bio">{{ member.bio }}</p>
+            {% else %}
+            <p class="empty-text">此會員尚未填寫個人簡介</p>
+            {% endif %}
+        </div>
+
+        <div class="detail-section">
+            <h3>訂單記錄 ({{ orders|length }})</h3>
+            {% if orders %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>訂單編號</th>
+                        <th>商品</th>
+                        <th>金額</th>
+                        <th>狀態</th>
+                        <th>時間</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>{{ order.order_number }}</td>
+                        <td>{{ order.product.name if order.product else '已刪除' }}</td>
+                        <td>${{ "%.2f"|format(order.total_price) }}</td>
+                        <td>
+                            <span class="status-badge status-{{ order.status }}">
+                                {{ order.status }}
+                            </span>
+                        </td>
+                        <td>{{ order.created_at.strftime('%Y-%m-%d') if order.created_at else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="empty-text">尚無訂單記錄</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="detail-sidebar">
+        <div class="detail-card">
+            <h4>基本資訊</h4>
+            <dl class="detail-list">
+                <dt>ID</dt>
+                <dd>{{ member.id }}</dd>
+                <dt>帳號</dt>
+                <dd>{{ member.username }}</dd>
+                <dt>Email</dt>
+                <dd>{{ member.email }}</dd>
+                <dt>名稱</dt>
+                <dd>{{ member.display_name or '-' }}</dd>
+                <dt>狀態</dt>
+                <dd>
+                    <span class="status-badge status-{{ 'published' if member.is_active else 'draft' }}">
+                        {{ '啟用' if member.is_active else '停用' }}
+                    </span>
+                </dd>
+                <dt>最後登入</dt>
+                <dd>{{ member.last_login_at.strftime('%Y-%m-%d %H:%M') if member.last_login_at else '從未登入' }}</dd>
+                <dt>註冊時間</dt>
+                <dd>{{ member.created_at.strftime('%Y-%m-%d %H:%M') if member.created_at else '-' }}</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %}

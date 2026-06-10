@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}後台管理{% endblock %} - 拾光選物</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>後台管理</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <span class="nav-icon">◈</span> 儀表板
+                </a>
+                <a href="{{ url_for('posts_list') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('posts') %}active{% endif %}">
+                    <span class="nav-icon">◇</span> 文章
+                </a>
+                <a href="{{ url_for('products_list') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('products') %}active{% endif %}">
+                    <span class="nav-icon">◇</span> 商品
+                </a>
+                <a href="{{ url_for('orders_list') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('orders') %}active{% endif %}">
+                    <span class="nav-icon">◇</span> 訂單
+                </a>
+                <a href="{{ url_for('members_list') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('members') %}active{% endif %}">
+                    <span class="nav-icon">◇</span> 會員
+                </a>
+                <a href="{{ url_for('admins_list') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('admins') %}active{% endif %}">
+                    <span class="nav-icon">◇</span> 管理員
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="admin-info">
+                    <span class="admin-name">{{ admin.display_name or admin.username }}</span>
+                    <span class="admin-role">({{ admin.role }})</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout-link">登出</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{% extends "shop_base.html" %}
+
+{% block title %}{{ product.name }} - 拾光選物{% endblock %}
+
+{% block content %}
+<div class="product-detail">
+    <div class="product-gallery">
+        {% if product.image_url %}
+        <div class="product-main-image" style="background-image: url('{{ product.image_url }}')"></div>
+        {% else %}
+        <div class="product-main-image placeholder">
+            <span class="placeholder-text">{{ product.name }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="product-info">
+        {% if product.category %}
+        <a href="{{ url_for('shop_category', category_slug=product.category.slug) }}" class="product-badge">{{ product.category.name }}</a>
+        {% endif %}
+        <h1 class="product-title">{{ product.name }}</h1>
+        <p class="product-price-large">${{ "%.2f"|format(product.price) }}</p>
+
+        {% if product.stock < 5 %}
+        <p class="stock-warning">僅剩 {{ product.stock }} 件，欲購從速</p>
+        {% elif product.stock > 0 %}
+        <p class="stock-info">庫存充足</p>
+        {% else %}
+        <p class="stock-warning">目前缺貨</p>
+        {% endif %}
+
+        <div class="product-description">
+            {{ product.description or '' }}
+        </div>
+    </div>
+</div>
+
+{% if posts %}
+<section class="related-posts">
+    <h2 class="section-title">相關文章</h2>
+    <div class="posts-list">
+        {% for post in posts %}
+        <a href="{{ blog_url('articles/' + post.slug) }}" class="post-item">
+            <span class="post-title">{{ post.title }}</span>
+            <span class="post-arrow">&rarr;</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

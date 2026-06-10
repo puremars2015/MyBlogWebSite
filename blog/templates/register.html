@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}註冊 - 拾光選物{% endblock %}
+{% block content %}
+<div class="auth-card">
+    <h1 class="auth-title">加入會員</h1>
+    <p class="auth-subtitle">建立帳號以收藏文章、查詢訂單</p>
+
+    <form method="post" class="auth-form">
+        <div class="form-row">
+            <label for="username">帳號 *</label>
+            <input type="text" id="username" name="username" required minlength="3" maxlength="100">
+        </div>
+        <div class="form-row">
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-row">
+            <label for="display_name">顯示名稱</label>
+            <input type="text" id="display_name" name="display_name" maxlength="100">
+            <small>留空會用帳號名稱</small>
+        </div>
+        <div class="form-row">
+            <label for="password">密碼 *</label>
+            <input type="password" id="password" name="password" required minlength="6">
+            <small>至少 6 字元</small>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">建立帳號</button>
+    </form>
+
+    <p class="auth-footer">已經有帳號了?<a href="{{ url_for('member_login') }}">立即登入</a></p>
+</div>
+{% endblock %}
