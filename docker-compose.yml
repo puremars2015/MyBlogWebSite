@@ -1,0 +1,79 @@
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: myblogwebsite-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - blog
+      - shop
+    networks:
+      - app-network
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+
+  blog:
+    build:
+      context: ./blog
+      dockerfile: Dockerfile
+    image: myblogwebsite-blog
+    environment:
+      - FLASK_ENV=production
+      - DB_HOST=db
+      - DB_PORT=1433
+      - DB_NAME=BlogShopDB
+      - DB_USER=sa
+      - DB_PASSWORD=${SA_PASSWORD}
+    depends_on:
+      - db
+    networks:
+      - app-network
+    expose:
+      - "5000"
+
+  shop:
+    build:
+      context: ./shop
+      dockerfile: Dockerfile
+    image: myblogwebsite-shop
+    environment:
+      - FLASK_ENV=production
+      - DB_HOST=db
+      - DB_PORT=1433
+      - DB_NAME=BlogShopDB
+      - DB_USER=sa
+      - DB_PASSWORD=${SA_PASSWORD}
+    depends_on:
+      - db
+    networks:
+      - app-network
+    expose:
+      - "5001"
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SA_PASSWORD}
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - ./init-scripts:/init-scripts
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${SA_PASSWORD}", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:
