@@ -1,5 +1,5 @@
 {% extends "shop_base.html" %}
-{% block title %}我的訂單 - 商店{% endblock %}
+{% block title %}我的訂單 - 投資課程{% endblock %}
 {% block content %}
 <div class="orders-page">
     <header class="page-header">
@@ -10,14 +10,14 @@
     {% if not orders %}
     <div class="empty-state">
         <p>目前沒有任何訂單</p>
-        <a href="{{ url_for('shop_index') }}" class="btn btn-primary">開始逛逛</a>
+        <a href="{{ url_for('shop_index') }}" class="btn btn-primary">查看課程</a>
     </div>
     {% else %}
     <table class="data-table">
         <thead>
             <tr>
                 <th>訂單編號</th>
-                <th>商品</th>
+                <th>課程</th>
                 <th>數量</th>
                 <th>金額</th>
                 <th>狀態</th>

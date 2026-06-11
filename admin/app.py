@@ -423,7 +423,7 @@ def products_list():
 def products_detail(product_id):
     product = db.session.get(Product, product_id)
     if not product:
-        flash('商品不存在', 'error')
+        flash('課程不存在', 'error')
         return redirect(url_for('products_list'))
 
     admin = db.session.get(Admin, session.get('user_id'))
@@ -435,7 +435,7 @@ def products_detail(product_id):
 def products_toggle_active(product_id):
     product = db.session.get(Product, product_id)
     if not product:
-        flash('商品不存在', 'error')
+        flash('課程不存在', 'error')
         return redirect(url_for('products_list'))
 
     product.is_active = not product.is_active
@@ -443,7 +443,7 @@ def products_toggle_active(product_id):
     db.session.commit()
 
     status = '已上架' if product.is_active else '已下架'
-    flash(f'商品「{product.name}」{status}', 'success')
+    flash(f'課程「{product.name}」{status}', 'success')
     return redirect(url_for('products_detail', product_id=product_id))
 
 

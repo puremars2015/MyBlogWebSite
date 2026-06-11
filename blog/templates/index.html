@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}拾光選物 - 首頁{% endblock %}
+{% block title %}至成投資學院 - 投資教學與實戰課程{% endblock %}
 
 {% block content %}
 <section class="hero">
-    <h1 class="hero-title">拾光選物</h1>
-    <p class="hero-tagline">慢慢生活,好好選物</p>
+    <p class="hero-eyebrow">Investment Education</p>
+    <h1 class="hero-title">至成投資學院</h1>
+    <p class="hero-tagline">用清楚的方法學投資，建立可長期執行的理財策略。</p>
 </section>
 
 <section class="section">
@@ -33,7 +34,7 @@
 </section>
 
 <section class="section">
-    <h2 class="section-title">本月精選</h2>
+    <h2 class="section-title">推薦投資課程</h2>
     <div class="product-grid">
         {% for product in products %}
         <a href="{{ shop_url(product.slug) }}" class="product-card">

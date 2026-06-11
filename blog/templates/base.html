@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}拾光選物{% endblock %}</title>
+    <title>{% block title %}至成投資學院{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <header class="site-header">
         <div class="header-inner">
-            <a href="{{ url_for('index') }}" class="site-name">拾光選物</a>
+            <a href="{{ url_for('index') }}" class="site-name">至成投資學院</a>
             <nav class="site-nav">
                 <a href="{{ url_for('index') }}">首頁</a>
                 <a href="{{ url_for('articles_list') }}">文章</a>
-                <a href="{{ shop_url('') }}">商店</a>
+                <a href="{{ shop_url('') }}">課程</a>
             </nav>
             <div class="user-menu">
                 {% if current_user %}
@@ -43,7 +43,7 @@
 
     <footer class="site-footer">
         <div class="footer-inner">
-            <p>&copy; 2024 拾光選物. All rights reserved.</p>
+            <p>&copy; 2024 至成投資學院. All rights reserved.</p>
         </div>
     </footer>
 </body>

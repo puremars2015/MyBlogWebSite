@@ -1,6 +1,6 @@
 {% extends "shop_base.html" %}
 
-{% block title %}{{ category.name }} - 拾光選物{% endblock %}
+{% block title %}{{ category.name }} - 至成投資學院{% endblock %}
 
 {% block content %}
 <section class="page-header">
@@ -24,7 +24,7 @@
             <h3 class="product-name">{{ product.name }}</h3>
             <p class="product-price">${{ "%.2f"|format(product.price) }}</p>
             {% if product.stock < 5 %}
-            <span class="stock-badge low">僅剩 {{ product.stock }} 件</span>
+            <span class="stock-badge low">名額有限，剩餘 {{ product.stock }} 席</span>
             {% endif %}
         </div>
     </a>

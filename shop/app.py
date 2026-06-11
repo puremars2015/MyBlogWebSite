@@ -147,7 +147,7 @@ class Order(db.Model):
 
 
 class Post(db.Model):
-    """跨子網域用 — shop 商品頁要列出「哪些文章推薦這個商品」時,需要讀 posts 表"""
+    """跨子網域用 — 課程頁要列出「哪些文章推薦這門課程」時,需要讀 posts 表"""
     __tablename__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
     slug = db.Column(db.Unicode(200), unique=True, nullable=False)
@@ -329,7 +329,7 @@ def shop_product_detail(slug):
     product = Product.query.filter_by(slug=slug).first()
     if not product or not product.is_active:
         return render_template('shop_not_found.html', slug=slug), 404
-    # 跨 app 查詢:哪些已發布文章推薦了這個商品
+    # 跨 app 查詢:哪些已發布文章推薦了這門課程
     query = text('''
         SELECT p.id, p.slug, p.title
         FROM posts p

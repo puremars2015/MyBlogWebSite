@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ post.title }} - 拾光選物{% endblock %}
+{% block title %}{{ post.title }} - 至成投資學院{% endblock %}
 
 {% block content %}
 <article class="article-detail">
@@ -30,7 +30,7 @@
 
 {% if products %}
 <section class="related-products">
-    <h2 class="section-title">相關商品</h2>
+    <h2 class="section-title">相關課程</h2>
     <div class="product-grid">
         {% for product in products %}
         <a href="{{ shop_url(product.slug) }}" class="product-card">

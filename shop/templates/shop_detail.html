@@ -1,6 +1,6 @@
 {% extends "shop_base.html" %}
 
-{% block title %}{{ product.name }} - 拾光選物{% endblock %}
+{% block title %}{{ product.name }} - 至成投資學院{% endblock %}
 
 {% block content %}
 <div class="product-detail">
@@ -22,11 +22,11 @@
         <p class="product-price-large">${{ "%.2f"|format(product.price) }}</p>
 
         {% if product.stock < 5 %}
-        <p class="stock-warning">僅剩 {{ product.stock }} 件，欲購從速</p>
+        <p class="stock-warning">名額有限，剩餘 {{ product.stock }} 席</p>
         {% elif product.stock > 0 %}
-        <p class="stock-info">庫存充足</p>
+        <p class="stock-info">目前仍可報名</p>
         {% else %}
-        <p class="stock-warning">目前缺貨</p>
+        <p class="stock-warning">目前暫停報名</p>
         {% endif %}
 
         <div class="product-description">

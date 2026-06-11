@@ -17,13 +17,13 @@
 <div class="detail-grid">
     <div class="detail-main">
         <div class="detail-section">
-            <h3>商品描述</h3>
+            <h3>課程描述</h3>
             <p class="product-description">{{ product.description or '無' }}</p>
         </div>
 
         {% if product.image_url %}
         <div class="detail-section">
-            <h3>商品圖片</h3>
+            <h3>課程圖片</h3>
             <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-image">
         </div>
         {% endif %}
@@ -41,7 +41,7 @@
                 <dd>{{ product.category.name if product.category else '未分類' }}</dd>
                 <dt>價格</dt>
                 <dd>${{ "%.2f"|format(product.price) }}</dd>
-                <dt>庫存</dt>
+                <dt>名額</dt>
                 <dd>{{ product.stock }}</dd>
                 <dt>狀態</dt>
                 <dd>
