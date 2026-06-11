@@ -476,6 +476,9 @@ button { font-family: inherit; }
 .form-row input[type=password],
 .form-row input[type=datetime-local],
 .form-row input[type=number],
+.form-row input[type=search],
+.form-row input[type=url],
+.form-row input[type=time],
 .form-row select,
 .form-row textarea,
 .form-group input[type=text],
@@ -483,6 +486,9 @@ button { font-family: inherit; }
 .form-group input[type=password],
 .form-group input[type=datetime-local],
 .form-group input[type=number],
+.form-group input[type=search],
+.form-group input[type=url],
+.form-group input[type=time],
 .form-group select {
     background: white;
     border: 1px solid var(--line);
@@ -512,6 +518,74 @@ button { font-family: inherit; }
 .checkbox-row { align-items: center; display: flex; }
 .checkbox-row label { align-items: center; display: flex; gap: 8px; margin-bottom: 0; }
 .checkbox-row input[type=checkbox] { accent-color: var(--brand); height: 16px; width: 16px; }
+
+.filter-bar {
+    align-items: end;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    display: grid;
+    gap: 14px;
+    grid-template-columns: 180px minmax(240px, 1fr) auto;
+    margin-bottom: 18px;
+    padding: 18px;
+}
+
+.filter-field label {
+    color: var(--text);
+    display: block;
+    font-size: 0.85em;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.filter-field input,
+.filter-field select,
+.inline-status-form select,
+.status-form select,
+.form-select {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.9em;
+    padding: 8px 10px;
+    width: 100%;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.stat-grid-compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.table-note {
+    color: var(--faint);
+    font-size: 0.78em;
+    margin-top: 4px;
+    max-width: 320px;
+}
+
+.economic-runs { margin-top: 24px; }
+
+.status-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 170px;
+}
+
+.inline-status-form,
+.status-form {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+}
+
+.inline-status-form select { min-width: 100px; }
 
 /* Detail view */
 .detail-grid {
@@ -653,9 +727,13 @@ button { font-family: inherit; }
     .stat-grid,
     .dashboard-panels,
     .detail-grid,
-    .form-grid { grid-template-columns: 1fr; }
+    .form-grid,
+    .filter-bar { grid-template-columns: 1fr; }
     .stat-card-featured { grid-column: auto; }
     .quick-actions { grid-template-columns: 1fr; }
     .detail-card dl,
     .detail-list { grid-template-columns: 1fr; }
+    .filter-actions,
+    .inline-status-form,
+    .status-form { align-items: stretch; flex-direction: column; }
 }

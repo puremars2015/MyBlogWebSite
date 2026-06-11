@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}至成投資學院 - 經濟數據儀表板{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="/" class="site-name">至成投資學院</a>
+            <nav class="site-nav">
+                <a href="http://blog.localhost">投資文章</a>
+                <a href="http://shop.localhost">投資課程</a>
+                <a href="/">經濟數據</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="site-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; 2024 至成投資學院. Economic dashboard uses mock data in this version.</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

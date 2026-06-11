@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}經濟數據排程{% endblock %}
+
+{% block content %}
+<div class="page-header dashboard-header">
+    <div>
+        <p class="eyebrow">Economic Data</p>
+        <h2>經濟數據排程</h2>
+        <p class="page-description">管理 dashboard.localhost 的 API 抓取排程。API key 由 .env 管理，不存入後台資料庫。</p>
+    </div>
+    <div class="page-actions">
+        <a href="http://dashboard.localhost" class="btn btn-secondary">開啟 Dashboard</a>
+    </div>
+</div>
+
+<div class="stats-grid stat-grid-compact">
+    <div class="stat-card">
+        <div class="stat-label">指標總數</div>
+        <div class="stat-value">{{ series_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">觀測資料</div>
+        <div class="stat-value">{{ observation_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">啟用排程</div>
+        <div class="stat-value">{{ active_jobs }}</div>
+    </div>
+</div>
+
+<section class="dashboard-panel">
+    <p class="eyebrow">Fetch Jobs</p>
+    <h3>資料抓取排程</h3>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>名稱</th>
+                    <th>Provider</th>
+                    <th>指標</th>
+                    <th>排程</th>
+                    <th>狀態</th>
+                    <th>下次執行</th>
+                    <th>最近結果</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                <tr>
+                    <td>{{ job.id }}</td>
+                    <td>{{ job.name }}</td>
+                    <td>{{ job.provider }}</td>
+                    <td>{{ job.series_code or '-' }}</td>
+                    <td>
+                        {% if job.schedule_type == 'daily' %}
+                        每日 {{ job.daily_time }}
+                        {% elif job.schedule_type == 'interval_hours' %}
+                        每 {{ ((job.interval_minutes or 60) / 60)|int }} 小時
+                        {% else %}
+                        每 {{ job.interval_minutes }} 分鐘
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ 'published' if job.is_active else 'draft' }}">{{ '啟用' if job.is_active else '停用' }}</span>
+                    </td>
+                    <td>{{ job.next_run_at.strftime('%Y-%m-%d %H:%M') if job.next_run_at else '-' }}</td>
+                    <td>
+                        <span class="status-badge status-{{ 'paid' if job.last_status == 'success' else 'pending' }}">{{ job.last_status or '-' }}</span>
+                        <p class="table-note">{{ job.last_message or '' }}</p>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('economic_data_job_edit', job_id=job.id) }}" class="btn-link">編輯</a>
+                        <form method="POST" action="{{ url_for('economic_data_job_run', job_id=job.id) }}" style="display:inline;">
+                            <button type="submit" class="btn-link">手動執行</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="empty-state">尚無排程</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="dashboard-panel dashboard-panel-muted economic-runs">
+    <p class="eyebrow">Recent Runs</p>
+    <h3>最近執行紀錄</h3>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>時間</th>
+                    <th>排程</th>
+                    <th>狀態</th>
+                    <th>訊息</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for run in runs %}
+                <tr>
+                    <td>{{ run.started_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ run.job.name if run.job else '-' }}</td>
+                    <td><span class="status-badge status-{{ 'paid' if run.status == 'success' else 'pending' }}">{{ run.status }}</span></td>
+                    <td>{{ run.message or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="empty-state">尚無執行紀錄</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

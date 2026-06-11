@@ -6,10 +6,18 @@
 <div class="page-header">
     <h2>{{ member.display_name or member.username }}</h2>
     <div class="page-actions">
+        <a href="{{ url_for('members_edit', member_id=member.id) }}" class="btn btn-primary">編輯會員</a>
+        {% if member.is_active %}
+        <form method="POST" action="{{ url_for('members_disable', member_id=member.id) }}" onsubmit="return confirm('確定要停用這個會員帳號嗎？');">
+            <button type="submit" class="btn-secondary">停用帳號</button>
+        </form>
+        {% else %}
         <form method="POST" action="{{ url_for('members_toggle_active', member_id=member.id) }}">
-            <button type="submit" class="btn-secondary">
-                {{ '停用帳號' if member.is_active else '啟用帳號' }}
-            </button>
+            <button type="submit" class="btn-secondary">啟用帳號</button>
+        </form>
+        {% endif %}
+        <form method="POST" action="{{ url_for('members_delete', member_id=member.id) }}" onsubmit="return confirm('確定要刪除這個會員嗎？相關訂單會保留為訪客訂單。');">
+            <button type="submit" class="btn-danger">刪除會員</button>
         </form>
     </div>
 </div>
@@ -46,7 +54,7 @@
                         <td>${{ "%.2f"|format(order.total_price) }}</td>
                         <td>
                             <span class="status-badge status-{{ order.status }}">
-                                {{ order.status }}
+                                {{ status_labels.get(order.status, order.status) }}
                             </span>
                         </td>
                         <td>{{ order.created_at.strftime('%Y-%m-%d') if order.created_at else '-' }}</td>

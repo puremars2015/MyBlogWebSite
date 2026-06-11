@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}編輯會員 {{ member.display_name or member.username }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Member Editor</p>
+        <h2>編輯會員 {{ member.display_name or member.username }}</h2>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('members_detail', member_id=member.id) }}" class="btn btn-secondary">返回會員</a>
+        <a href="{{ url_for('members_list') }}" class="btn btn-secondary">返回列表</a>
+    </div>
+</div>
+
+<form method="post" class="admin-form admin-form-wide">
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="username">帳號 *</label>
+            <input type="text" id="username" name="username" required maxlength="100" value="{{ form_data.get('username', '') }}">
+        </div>
+
+        <div class="form-row">
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" required maxlength="200" value="{{ form_data.get('email', '') }}">
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="display_name">顯示名稱</label>
+            <input type="text" id="display_name" name="display_name" maxlength="100" value="{{ form_data.get('display_name', '') }}">
+        </div>
+
+        <div class="form-row">
+            <label for="avatar_url">頭像 URL</label>
+            <input type="url" id="avatar_url" name="avatar_url" maxlength="500" value="{{ form_data.get('avatar_url', '') }}">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="bio">個人簡介</label>
+        <textarea id="bio" name="bio" rows="6">{{ form_data.get('bio', '') }}</textarea>
+    </div>
+
+    <div class="form-row checkbox-row">
+        <label>
+            <input type="checkbox" name="is_active" value="1" {% if form_data.get('is_active') == '1' %}checked{% endif %}>
+            啟用會員帳號
+        </label>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">更新會員</button>
+        <a href="{{ url_for('members_detail', member_id=member.id) }}" class="btn btn-secondary">取消</a>
+    </div>
+</form>
+{% endblock %}

@@ -35,10 +35,24 @@
                 <td>{{ member.created_at.strftime('%Y-%m-%d') if member.created_at else '-' }}</td>
                 <td>
                     <a href="{{ url_for('members_detail', member_id=member.id) }}" class="btn-link">查看</a>
+                    <a href="{{ url_for('members_edit', member_id=member.id) }}" class="btn-link">編輯</a>
+                    {% if member.is_active %}
+                    <form method="POST" action="{{ url_for('members_disable', member_id=member.id) }}" style="display:inline;" onsubmit="return confirm('確定要停用這個會員帳號嗎？');">
+                        <input type="hidden" name="return_to" value="list">
+                        <input type="hidden" name="page" value="{{ page }}">
+                        <button type="submit" class="btn-link">停用</button>
+                    </form>
+                    {% else %}
                     <form method="POST" action="{{ url_for('members_toggle_active', member_id=member.id) }}" style="display:inline;">
-                        <button type="submit" class="btn-link">
-                            {{ '停用' if member.is_active else '啟用' }}
-                        </button>
+                        <input type="hidden" name="return_to" value="list">
+                        <input type="hidden" name="page" value="{{ page }}">
+                        <button type="submit" class="btn-link">啟用</button>
+                    </form>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('members_delete', member_id=member.id) }}" style="display:inline;" onsubmit="return confirm('確定要刪除這個會員嗎？相關訂單會保留為訪客訂單。');">
+                        <input type="hidden" name="return_to" value="list">
+                        <input type="hidden" name="page" value="{{ page }}">
+                        <button type="submit" class="btn-link btn-link-danger">刪除</button>
                     </form>
                 </td>
             </tr>

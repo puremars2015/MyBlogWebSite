@@ -25,6 +25,9 @@
                 <a href="{{ url_for('orders_list') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('orders') %}active{% endif %}">
                     <span class="nav-icon">◇</span> 訂單
                 </a>
+                <a href="{{ url_for('economic_data_jobs') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('economic_data') %}active{% endif %}">
+                    <span class="nav-icon">◇</span> 經濟數據
+                </a>
                 <a href="{{ url_for('members_list') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('members') %}active{% endif %}">
                     <span class="nav-icon">◇</span> 會員
                 </a>

@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}經濟數據儀表板 - 至成投資學院{% endblock %}
+
+{% block content %}
+{% set txf_card = cards|selectattr('series.code', 'equalto', 'txf_price')|list|first if cards else None %}
+{% set txf_waiting = txf_card and (txf_card.observation.change_label == '等待資料' or txf_card.observation.value == 0) %}
+
+<section class="hero">
+    <p class="hero-eyebrow">Macro Dashboard</p>
+    <h1>全球與台灣經濟數據儀表板</h1>
+    <p>集中追蹤 FED、通膨、就業、台灣總經與貴金屬價格。第一版先使用假資料，後續由排程工具接 API 自動更新。</p>
+    <div class="hero-meta">
+        <span>資料狀態: Mock Data</span>
+        <span>最新更新: {{ updated_at.strftime('%Y-%m-%d %H:%M') if updated_at else '-' }}</span>
+    </div>
+</section>
+
+{% if txf_card %}
+<section class="dashboard-section txf-feature">
+    <div class="section-heading">
+        <div>
+            <p class="section-kicker">Live Feed</p>
+            <h2>台指期 (TXF) 即時價格</h2>
+        </div>
+        <span class="live-badge" id="txf-live-badge">
+            <span class="live-dot"></span> <span id="txf-live-text">{{ '等待首筆資料' if txf_waiting else '即時更新中' }}</span>
+        </span>
+    </div>
+    <article id="txf-card" data-waiting="{{ '1' if txf_waiting else '0' }}" class="metric-card metric-card-txf status-{{ txf_card.observation.status_label }}">
+        <div class="metric-topline">
+            <span class="metric-source">{{ txf_card.series.source_name }}</span>
+            <span class="metric-status" id="txf-change">{{ txf_card.observation.change_label }}</span>
+        </div>
+        <h3>{{ txf_card.series.name }}</h3>
+        <p class="metric-description">{{ txf_card.series.description }}</p>
+        <div class="metric-value-row">
+            {% if txf_waiting %}
+            <span class="metric-value" id="txf-price">--</span>
+            <span class="metric-unit">{{ txf_card.series.unit }}</span>
+            {% else %}
+            <span class="metric-value" id="txf-price">{{ "{:,.2f}".format(txf_card.value) }}</span>
+            <span class="metric-unit">{{ txf_card.series.unit }}</span>
+            {% endif %}
+        </div>
+        <dl class="metric-meta">
+            <div>
+                <dt>前值</dt>
+                <dd id="txf-previous">
+                    {% if txf_waiting or txf_card.previous_value is none %}
+                    - {{ txf_card.series.unit }}
+                    {% else %}
+                    {{ "{:,.2f}".format(txf_card.previous_value) }} {{ txf_card.series.unit }}
+                    {% endif %}
+                </dd>
+            </div>
+            <div>
+                <dt>最近更新</dt>
+                <dd id="txf-time">{{ txf_card.observation.observed_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+            </div>
+            <div>
+                <dt>接收端點</dt>
+                <dd><code>POST /api/txf_price</code></dd>
+            </div>
+        </dl>
+    </article>
+</section>
+{% endif %}
+
+{% for category in categories %}
+<section class="dashboard-section">
+    <div class="section-heading">
+        <p class="section-kicker">Category</p>
+        <h2>{{ category }}</h2>
+    </div>
+    <div class="metric-grid">
+        {% for card in cards if card.series.category == category %}
+        <article class="metric-card status-{{ card.observation.status_label }}">
+            <div class="metric-topline">
+                <span class="metric-source">{{ card.series.source_name }}</span>
+                <span class="metric-status">{{ card.observation.change_label }}</span>
+            </div>
+            <h3>{{ card.series.name }}</h3>
+            <p class="metric-description">{{ card.series.description }}</p>
+            <div class="metric-value-row">
+                <span class="metric-value">{{ "%.2f"|format(card.value) }}</span>
+                <span class="metric-unit">{{ card.series.unit }}</span>
+            </div>
+            <dl class="metric-meta">
+                <div>
+                    <dt>前值</dt>
+                    <dd>{{ "%.2f"|format(card.previous_value) if card.previous_value is not none else '-' }} {{ card.series.unit }}</dd>
+                </div>
+                <div>
+                    <dt>觀測時間</dt>
+                    <dd>{{ card.observation.observed_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+                </div>
+            </dl>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endfor %}
+
+<section class="events-section">
+    <div class="section-heading">
+        <p class="section-kicker">Calendar</p>
+        <h2>近期重要公布與會議</h2>
+    </div>
+    <div class="event-list">
+        {% for event in events %}
+        <article class="event-item">
+            <div class="event-date">
+                <span>{{ event.event_at.strftime('%m/%d') }}</span>
+                <small>{{ event.event_at.strftime('%H:%M') }}</small>
+            </div>
+            <div class="event-body">
+                <p class="event-category">{{ event.category }}</p>
+                <h3>{{ event.title }}</h3>
+                <p>{{ event.description }}</p>
+                <span>{{ event.source_name }}</span>
+            </div>
+        </article>
+        {% endfor %}
+{% endblock %}
+
+{% block scripts %}
+{% if txf_card %}
+<script>
+(function() {
+    const REFRESH_MS = 10000;
+    const card = document.getElementById('txf-card');
+    if (!card) return;
+
+    const priceEl = document.getElementById('txf-price');
+    const previousEl = document.getElementById('txf-previous');
+    const changeEl = document.getElementById('txf-change');
+    const timeEl = document.getElementById('txf-time');
+    const liveText = document.getElementById('txf-live-text');
+
+    let isWaiting = card.dataset.waiting === '1';
+
+    function formatNumber(n) {
+        const value = Number(n);
+        if (!isFinite(value)) return '--';
+        return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatTime(iso) {
+        if (!iso) return '-';
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return iso;
+        const pad = (n) => String(n).padStart(2, '0');
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function applyData(data) {
+        if (priceEl) {
+            priceEl.textContent = isWaiting || !data.price ? '--' : formatNumber(data.price);
+        }
+        if (previousEl) {
+            const unit = data.unit || '點';
+            if (isWaiting || data.previous_price == null) {
+                previousEl.textContent = '- ' + unit;
+            } else {
+                previousEl.textContent = formatNumber(data.previous_price) + ' ' + unit;
+            }
+        }
+        if (changeEl) {
+            changeEl.textContent = data.change_label || '-';
+        }
+        if (timeEl) {
+            timeEl.textContent = formatTime(data.observed_at);
+        }
+        card.classList.remove('status-up', 'status-down', 'status-flat');
+        if (data.status_label) {
+            card.classList.add('status-' + data.status_label);
+        }
+        if (isWaiting && Number(data.price) > 0) {
+            isWaiting = false;
+            if (liveText) liveText.textContent = '即時更新中';
+        }
+    }
+
+    async function refresh() {
+        try {
+            const res = await fetch('/api/txf_price', { cache: 'no-store', headers: { 'Accept': 'application/json' } });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data && typeof data.price !== 'undefined') {
+                applyData(data);
+            }
+        } catch (e) {
+            console.debug('TXF refresh failed', e);
+        }
+    }
+
+    refresh();
+    setInterval(refresh, REFRESH_MS);
+})();
+</script>
+{% endif %}
+{% endblock %}

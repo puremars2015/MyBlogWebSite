@@ -1,11 +1,11 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import text
+from sqlalchemy import or_, text
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 
@@ -266,6 +266,108 @@ class Order(db.Model):
         }
 
 
+class EconomicSeries(db.Model):
+    __tablename__ = 'economic_series'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.Unicode(80), unique=True, nullable=False)
+    name = db.Column(db.Unicode(120), nullable=False)
+    category = db.Column(db.Unicode(80), nullable=False)
+    description = db.Column(db.Unicode(500))
+    unit = db.Column(db.Unicode(40))
+    source_name = db.Column(db.Unicode(120))
+    source_url = db.Column(db.Unicode(500))
+    sort_order = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+
+
+class EconomicObservation(db.Model):
+    __tablename__ = 'economic_observations'
+    id = db.Column(db.Integer, primary_key=True)
+    series_id = db.Column(db.Integer, db.ForeignKey('economic_series.id'), nullable=False)
+    observed_at = db.Column(db.DateTime, nullable=False)
+    value = db.Column(db.Numeric(18, 4), nullable=False)
+    previous_value = db.Column(db.Numeric(18, 4))
+    change_label = db.Column(db.Unicode(40))
+    status_label = db.Column(db.Unicode(20), default='flat')
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+    series = db.relationship('EconomicSeries', lazy='joined')
+
+
+class EconomicEvent(db.Model):
+    __tablename__ = 'economic_events'
+    id = db.Column(db.Integer, primary_key=True)
+    slug = db.Column(db.Unicode(120), unique=True, nullable=False)
+    title = db.Column(db.Unicode(160), nullable=False)
+    category = db.Column(db.Unicode(80), nullable=False)
+    event_at = db.Column(db.DateTime, nullable=False)
+    description = db.Column(db.Unicode(500))
+    source_name = db.Column(db.Unicode(120))
+    source_url = db.Column(db.Unicode(500))
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+
+
+class EconomicFetchJob(db.Model):
+    __tablename__ = 'economic_fetch_jobs'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Unicode(120), nullable=False)
+    provider = db.Column(db.Unicode(60), nullable=False, default='mock')
+    series_code = db.Column(db.Unicode(80))
+    schedule_type = db.Column(db.Unicode(20), nullable=False, default='daily')
+    interval_minutes = db.Column(db.Integer, default=1440)
+    daily_time = db.Column(db.Unicode(5), default='08:00')
+    is_active = db.Column(db.Boolean, default=True)
+    next_run_at = db.Column(db.DateTime)
+    last_run_at = db.Column(db.DateTime)
+    last_status = db.Column(db.Unicode(20))
+    last_message = db.Column(db.Unicode(500))
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+
+
+class EconomicFetchRun(db.Model):
+    __tablename__ = 'economic_fetch_runs'
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('economic_fetch_jobs.id'), nullable=False)
+    started_at = db.Column(db.DateTime, nullable=False)
+    finished_at = db.Column(db.DateTime)
+    status = db.Column(db.Unicode(20), nullable=False)
+    message = db.Column(db.Unicode(500))
+
+    job = db.relationship('EconomicFetchJob', lazy='joined')
+
+
+ECONOMIC_SERIES_SEED = [
+    ('fed_funds_rate', 'FED 利率', '美國央行與利率', '聯邦基金目標利率區間上緣', '%', 'Federal Reserve', 1, Decimal('5.50'), Decimal('5.25'), '持平偏高', 'flat'),
+    ('fomc_dot_median', '點陣圖利率中位數', '美國央行與利率', 'FOMC 最新點陣圖年末利率預估', '%', 'Federal Reserve SEP', 2, Decimal('4.75'), Decimal('5.00'), '下修 25bp', 'down'),
+    ('us_nonfarm_payrolls', '非農就業新增', '美國就業與通膨', '美國非農就業人口月增', '千人', 'BLS', 10, Decimal('175'), Decimal('315'), '低於前值', 'down'),
+    ('us_cpi_yoy', '美國 CPI 年增率', '美國就業與通膨', '美國消費者物價指數年增率', '%', 'BLS', 11, Decimal('3.30'), Decimal('3.50'), '降溫', 'down'),
+    ('taiwan_policy_rate', '台灣央行政策利率', '台灣經濟數據', '中央銀行重貼現率', '%', '中央銀行', 20, Decimal('2.00'), Decimal('1.875'), '升息 12.5bp', 'up'),
+    ('taiwan_cpi_yoy', '台灣 CPI 年增率', '台灣經濟數據', '台灣消費者物價指數年增率', '%', '主計總處', 21, Decimal('2.24'), Decimal('2.42'), '小幅降溫', 'down'),
+    ('taiwan_gdp_yoy', '台灣 GDP 年增率', '台灣經濟數據', '台灣實質 GDP 年增率', '%', '主計總處', 22, Decimal('5.09'), Decimal('4.93'), '小幅上修', 'up'),
+    ('taiwan_unemployment', '台灣失業率', '台灣經濟數據', '台灣失業率', '%', '主計總處', 23, Decimal('3.34'), Decimal('3.36'), '持平', 'flat'),
+    ('txf_price', '台指期近月', '台灣市場價格', '台灣加權股價指數期貨近月合約即時價格', '點', 'External TXF Feed', 24, Decimal('0'), Decimal('0'), '等待資料', 'flat'),
+    ('gold_spot_usd', '黃金現貨', '貴金屬', '黃金現貨美元價格', 'USD/oz', 'Mock Metals Feed', 30, Decimal('2332.40'), Decimal('2310.20'), '走高', 'up'),
+    ('silver_spot_usd', '白銀現貨', '貴金屬', '白銀現貨美元價格', 'USD/oz', 'Mock Metals Feed', 31, Decimal('29.48'), Decimal('29.90'), '回落', 'down'),
+]
+
+ECONOMIC_EVENT_SEED = [
+    ('next-fomc', 'FOMC 利率決策會議', '美國央行與利率', 18, '下次 FOMC 會議與利率聲明公布。', 'Federal Reserve'),
+    ('next-us-cpi', '美國 CPI 公布', '美國就業與通膨', 9, '美國 CPI 與核心 CPI 數據公布。', 'BLS'),
+    ('next-nfp', '美國非農就業公布', '美國就業與通膨', 14, '非農就業人口、失業率與薪資數據公布。', 'BLS'),
+    ('next-tw-cpi', '台灣 CPI 公布', '台灣經濟數據', 11, '台灣 CPI 與物價相關統計公布。', '主計總處'),
+]
+
+ECONOMIC_JOB_SEED = [
+    ('Mock: 美國央行與利率', 'mock', 'fed_funds_rate', 'daily', 1440, '08:00'),
+    ('Mock: 美國就業與通膨', 'mock', 'us_cpi_yoy', 'daily', 1440, '08:10'),
+    ('Mock: 台灣經濟數據', 'mock', 'taiwan_cpi_yoy', 'daily', 1440, '08:20'),
+    ('Mock: 貴金屬價格', 'mock', 'gold_spot_usd', 'interval_minutes', 60, '08:30'),
+]
+
+
 def get_post_form_data(post=None):
     if not post:
         return {
@@ -481,6 +583,343 @@ def update_product_from_form(product):
     return True, []
 
 
+ORDER_STATUS_LABELS = {
+    'pending': '待付款',
+    'paid': '已付款',
+    'shipped': '已出貨',
+    'done': '已完成',
+    'cancelled': '已取消'
+}
+ORDER_STATUS_OPTIONS = list(ORDER_STATUS_LABELS.items())
+
+
+def get_order_form_data(order=None):
+    if not order:
+        return {
+            'status': 'pending',
+            'quantity': '1',
+            'total_price': '0',
+            'recipient_name': '',
+            'recipient_phone': '',
+            'shipping_address': '',
+            'note': ''
+        }
+
+    return {
+        'status': order.status or 'pending',
+        'quantity': str(order.quantity or 1),
+        'total_price': str(order.total_price or 0),
+        'recipient_name': order.recipient_name or '',
+        'recipient_phone': order.recipient_phone or '',
+        'shipping_address': order.shipping_address or '',
+        'note': order.note or ''
+    }
+
+
+def render_order_form(order, form_data=None):
+    admin = db.session.get(Admin, session.get('user_id'))
+    return render_template('orders/form.html', admin=admin, order=order,
+        form_data=form_data or get_order_form_data(order),
+        status_options=ORDER_STATUS_OPTIONS, status_labels=ORDER_STATUS_LABELS)
+
+
+def update_order_from_form(order):
+    status = request.form.get('status', '').strip()
+    quantity_raw = request.form.get('quantity', '').strip()
+    total_price_raw = request.form.get('total_price', '').strip()
+    recipient_name = request.form.get('recipient_name', '').strip()
+    recipient_phone = request.form.get('recipient_phone', '').strip()
+    shipping_address = request.form.get('shipping_address', '').strip()
+    note = request.form.get('note', '').strip()
+
+    errors = []
+    if status not in ORDER_STATUS_LABELS:
+        errors.append('無效的訂單狀態')
+
+    try:
+        quantity = int(quantity_raw)
+    except ValueError:
+        errors.append('數量格式不正確')
+        quantity = None
+    else:
+        if quantity < 1:
+            errors.append('數量不可小於 1')
+
+    try:
+        total_price = Decimal(total_price_raw)
+    except InvalidOperation:
+        errors.append('金額格式不正確')
+        total_price = None
+    else:
+        if total_price < 0:
+            errors.append('金額不可小於 0')
+
+    if errors:
+        return False, errors
+
+    order.status = status
+    order.quantity = quantity
+    order.total_price = total_price
+    order.recipient_name = recipient_name or None
+    order.recipient_phone = recipient_phone or None
+    order.shipping_address = shipping_address or None
+    order.note = note or None
+    order.updated_at = datetime.utcnow()
+    return True, []
+
+
+def redirect_to_orders_list_from_form():
+    page = request.form.get('page', 1)
+    status = request.form.get('current_status', '')
+    q = request.form.get('q', '')
+    return redirect(url_for('orders_list', page=page, status=status, q=q))
+
+
+def get_member_form_data(member=None):
+    if not member:
+        return {
+            'username': '',
+            'email': '',
+            'display_name': '',
+            'avatar_url': '',
+            'bio': '',
+            'is_active': '1'
+        }
+
+    return {
+        'username': member.username or '',
+        'email': member.email or '',
+        'display_name': member.display_name or '',
+        'avatar_url': member.avatar_url or '',
+        'bio': member.bio or '',
+        'is_active': '1' if member.is_active else ''
+    }
+
+
+def render_member_form(member, form_data=None):
+    admin = db.session.get(Admin, session.get('user_id'))
+    return render_template('members/form.html', admin=admin, member=member,
+        form_data=form_data or get_member_form_data(member))
+
+
+def update_member_from_form(member):
+    username = request.form.get('username', '').strip()
+    email = request.form.get('email', '').strip()
+    display_name = request.form.get('display_name', '').strip()
+    avatar_url = request.form.get('avatar_url', '').strip()
+    bio = request.form.get('bio', '').strip()
+    is_active = request.form.get('is_active') == '1'
+
+    errors = []
+    if not username:
+        errors.append('請輸入帳號')
+    if not email:
+        errors.append('請輸入 Email')
+
+    if username:
+        existing = Member.query.filter(Member.username == username, Member.id != member.id).first()
+        if existing:
+            errors.append('帳號已被其他會員使用')
+
+    if email:
+        existing = Member.query.filter(Member.email == email, Member.id != member.id).first()
+        if existing:
+            errors.append('Email 已被其他會員使用')
+
+    if errors:
+        return False, errors
+
+    member.username = username
+    member.email = email
+    member.display_name = display_name or None
+    member.avatar_url = avatar_url or None
+    member.bio = bio or None
+    member.is_active = is_active
+    member.updated_at = datetime.utcnow()
+    return True, []
+
+
+def redirect_to_members_list_from_form():
+    page = request.form.get('page', 1)
+    return redirect(url_for('members_list', page=page))
+
+
+def ensure_economic_schema_and_seed():
+    db.create_all()
+
+    if EconomicSeries.query.count() == 0:
+        now = datetime.utcnow()
+        for code, name, category, description, unit, source_name, sort_order, value, previous, change, status in ECONOMIC_SERIES_SEED:
+            series = EconomicSeries(code=code, name=name, category=category,
+                description=description, unit=unit, source_name=source_name,
+                sort_order=sort_order)
+            db.session.add(series)
+            db.session.flush()
+            db.session.add(EconomicObservation(series_id=series.id,
+                observed_at=now - timedelta(hours=sort_order % 8), value=value,
+                previous_value=previous, change_label=change, status_label=status))
+
+    if EconomicEvent.query.count() == 0:
+        now = datetime.utcnow()
+        for slug, title, category, days, description, source_name in ECONOMIC_EVENT_SEED:
+            db.session.add(EconomicEvent(slug=slug, title=title, category=category,
+                event_at=now + timedelta(days=days), description=description,
+                source_name=source_name))
+
+    if EconomicFetchJob.query.count() == 0:
+        now = datetime.utcnow()
+        for name, provider, series_code, schedule_type, interval_minutes, daily_time in ECONOMIC_JOB_SEED:
+            db.session.add(EconomicFetchJob(name=name, provider=provider,
+                series_code=series_code, schedule_type=schedule_type,
+                interval_minutes=interval_minutes, daily_time=daily_time,
+                is_active=True, next_run_at=now + timedelta(minutes=5),
+                last_status='seeded',
+                last_message='Mock job seeded. API keys are expected from .env in future providers.'))
+
+    db.session.commit()
+
+
+def economic_next_run(job, now=None):
+    now = now or datetime.utcnow()
+    if job.schedule_type == 'interval_minutes':
+        return now + timedelta(minutes=max(job.interval_minutes or 60, 1))
+    if job.schedule_type == 'interval_hours':
+        return now + timedelta(hours=max(job.interval_minutes or 60, 1) / 60)
+
+    daily_time = job.daily_time or '08:00'
+    try:
+        hour, minute = [int(part) for part in daily_time.split(':', 1)]
+    except ValueError:
+        hour, minute = 8, 0
+    candidate = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if candidate <= now:
+        candidate += timedelta(days=1)
+    return candidate
+
+
+def get_economic_job_form_data(job=None):
+    if not job:
+        return {
+            'name': '',
+            'provider': 'mock',
+            'series_code': '',
+            'schedule_type': 'daily',
+            'interval_minutes': '1440',
+            'daily_time': '08:00',
+            'is_active': '1'
+        }
+    return {
+        'name': job.name or '',
+        'provider': job.provider or 'mock',
+        'series_code': job.series_code or '',
+        'schedule_type': job.schedule_type or 'daily',
+        'interval_minutes': str(job.interval_minutes or 1440),
+        'daily_time': job.daily_time or '08:00',
+        'is_active': '1' if job.is_active else ''
+    }
+
+
+def render_economic_job_form(job, form_data=None):
+    admin = db.session.get(Admin, session.get('user_id'))
+    series_list = EconomicSeries.query.order_by(EconomicSeries.category, EconomicSeries.sort_order).all()
+    return render_template('economic_data/job_form.html', admin=admin, job=job,
+        form_data=form_data or get_economic_job_form_data(job), series_list=series_list)
+
+
+def update_economic_job_from_form(job):
+    name = request.form.get('name', '').strip()
+    provider = request.form.get('provider', '').strip()
+    series_code = request.form.get('series_code', '').strip()
+    schedule_type = request.form.get('schedule_type', '').strip()
+    interval_minutes_raw = request.form.get('interval_minutes', '').strip()
+    daily_time = request.form.get('daily_time', '').strip()
+    is_active = request.form.get('is_active') == '1'
+
+    errors = []
+    if not name:
+        errors.append('請輸入排程名稱')
+    if provider not in ['mock', 'fred', 'bls', 'taiwan', 'metals']:
+        errors.append('Provider 不正確')
+    if schedule_type not in ['interval_minutes', 'interval_hours', 'daily']:
+        errors.append('排程類型不正確')
+    if series_code and not EconomicSeries.query.filter_by(code=series_code).first():
+        errors.append('選擇的指標不存在')
+
+    try:
+        interval_minutes = int(interval_minutes_raw or 1440)
+    except ValueError:
+        errors.append('間隔時間格式不正確')
+        interval_minutes = 1440
+    else:
+        if interval_minutes < 1:
+            errors.append('間隔時間不可小於 1 分鐘')
+
+    if schedule_type == 'daily':
+        try:
+            hour, minute = [int(part) for part in daily_time.split(':', 1)]
+            if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+                raise ValueError
+        except ValueError:
+            errors.append('每日執行時間格式需為 HH:MM')
+
+    if errors:
+        return False, errors
+
+    job.name = name
+    job.provider = provider
+    job.series_code = series_code or None
+    job.schedule_type = schedule_type
+    job.interval_minutes = interval_minutes
+    job.daily_time = daily_time or '08:00'
+    job.is_active = is_active
+    job.next_run_at = economic_next_run(job) if is_active else None
+    job.updated_at = datetime.utcnow()
+    return True, []
+
+
+def run_economic_job(job):
+    started_at = datetime.utcnow()
+    run = EconomicFetchRun(job_id=job.id, started_at=started_at, status='running')
+    db.session.add(run)
+    db.session.flush()
+
+    try:
+        if job.provider == 'mock':
+            series = EconomicSeries.query.filter_by(code=job.series_code).first()
+            if not series:
+                message = f'Series {job.series_code} not found; mock job skipped.'
+            else:
+                latest = EconomicObservation.query.filter_by(series_id=series.id).order_by(EconomicObservation.observed_at.desc()).first()
+                base = Decimal(latest.value if latest else 0)
+                bump = Decimal('0.01') if series.unit == '%' else Decimal('1.00')
+                value = base + bump
+                db.session.add(EconomicObservation(series_id=series.id,
+                    observed_at=datetime.utcnow(), value=value, previous_value=base,
+                    change_label='手動 Mock 更新', status_label='up'))
+                message = f'Mock updated {series.code} from {base} to {value}.'
+        else:
+            message = f'Provider {job.provider} 尚未實作。API key 將從 .env 讀取。'
+
+        run.status = 'success'
+        run.message = message
+        job.last_status = 'success'
+        job.last_message = message
+    except Exception as exc:
+        run.status = 'error'
+        run.message = str(exc)
+        job.last_status = 'error'
+        job.last_message = str(exc)
+    finally:
+        now = datetime.utcnow()
+        run.finished_at = now
+        job.last_run_at = now
+        job.next_run_at = economic_next_run(job, now) if job.is_active else None
+        job.updated_at = now
+        db.session.commit()
+
+    return run
+
+
 @app.route('/health')
 def health():
     return jsonify({'status': 'healthy'})
@@ -571,6 +1010,62 @@ def dashboard():
         order_shipped=order_shipped, order_done=order_done,
         member_count=member_count, member_active=member_active, member_disabled=member_disabled,
         admin_count=admin_count, admin=admin)
+
+
+@app.route('/economic-data')
+@app.route('/economic-data/jobs')
+@login_required
+def economic_data_jobs():
+    ensure_economic_schema_and_seed()
+    admin = db.session.get(Admin, session.get('user_id'))
+    jobs = EconomicFetchJob.query.order_by(EconomicFetchJob.id).all()
+    runs = EconomicFetchRun.query.order_by(EconomicFetchRun.started_at.desc()).limit(12).all()
+    series_count = EconomicSeries.query.count()
+    observation_count = EconomicObservation.query.count()
+    active_jobs = EconomicFetchJob.query.filter_by(is_active=True).count()
+    return render_template('economic_data/jobs.html', admin=admin, jobs=jobs, runs=runs,
+        series_count=series_count, observation_count=observation_count,
+        active_jobs=active_jobs)
+
+
+@app.route('/economic-data/jobs/<int:job_id>/edit', methods=['GET', 'POST'])
+@login_required
+def economic_data_job_edit(job_id):
+    ensure_economic_schema_and_seed()
+    job = db.session.get(EconomicFetchJob, job_id)
+    if not job:
+        flash('排程不存在', 'error')
+        return redirect(url_for('economic_data_jobs'))
+
+    if request.method == 'POST':
+        success, errors = update_economic_job_from_form(job)
+        if success:
+            db.session.commit()
+            flash(f'排程「{job.name}」已更新', 'success')
+            return redirect(url_for('economic_data_jobs'))
+
+        for error in errors:
+            flash(error, 'error')
+        return render_economic_job_form(job, form_data=request.form)
+
+    return render_economic_job_form(job)
+
+
+@app.route('/economic-data/jobs/<int:job_id>/run', methods=['POST'])
+@login_required
+def economic_data_job_run(job_id):
+    ensure_economic_schema_and_seed()
+    job = db.session.get(EconomicFetchJob, job_id)
+    if not job:
+        flash('排程不存在', 'error')
+        return redirect(url_for('economic_data_jobs'))
+
+    run = run_economic_job(job)
+    if run.status == 'success':
+        flash(f'排程「{job.name}」已手動執行', 'success')
+    else:
+        flash(f'排程「{job.name}」執行失敗: {run.message}', 'error')
+    return redirect(url_for('economic_data_jobs'))
 
 
 @app.route('/posts')
@@ -792,16 +1287,35 @@ def products_delete(product_id):
 @login_required
 def orders_list():
     page = max(1, int(request.args.get('page', 1)))
+    selected_status = request.args.get('status', '').strip()
+    q = request.args.get('q', '').strip()
     per_page = 20
     offset = (page - 1) * per_page
-    query = Order.query.order_by(Order.created_at.desc())
+
+    query = Order.query.outerjoin(Member, Order.member_id == Member.id).outerjoin(Product, Order.product_id == Product.id)
+    if selected_status in ORDER_STATUS_LABELS:
+        query = query.filter(Order.status == selected_status)
+    else:
+        selected_status = ''
+
+    if q:
+        keyword = f'%{q}%'
+        query = query.filter(or_(
+            Order.order_number.ilike(keyword),
+            Member.display_name.ilike(keyword),
+            Member.username.ilike(keyword),
+            Product.name.ilike(keyword)
+        ))
+
     total = query.count()
-    orders = query.offset(offset).limit(per_page).all()
+    orders = query.order_by(Order.created_at.desc()).offset(offset).limit(per_page).all()
     total_pages = (total + per_page - 1) // per_page if total > 0 else 1
 
     admin = db.session.get(Admin, session.get('user_id'))
     return render_template('orders/list.html', orders=orders, total=total,
-        page=page, per_page=per_page, total_pages=total_pages, admin=admin)
+        page=page, per_page=per_page, total_pages=total_pages, admin=admin,
+        status_options=ORDER_STATUS_OPTIONS, status_labels=ORDER_STATUS_LABELS,
+        selected_status=selected_status, q=q)
 
 
 @app.route('/orders/<int:order_id>')
@@ -813,7 +1327,30 @@ def orders_detail(order_id):
         return redirect(url_for('orders_list'))
 
     admin = db.session.get(Admin, session.get('user_id'))
-    return render_template('orders/detail.html', order=order, admin=admin)
+    return render_template('orders/detail.html', order=order, admin=admin,
+        status_options=ORDER_STATUS_OPTIONS, status_labels=ORDER_STATUS_LABELS)
+
+
+@app.route('/orders/<int:order_id>/edit', methods=['GET', 'POST'])
+@login_required
+def orders_edit(order_id):
+    order = db.session.get(Order, order_id)
+    if not order:
+        flash('訂單不存在', 'error')
+        return redirect(url_for('orders_list'))
+
+    if request.method == 'POST':
+        success, errors = update_order_from_form(order)
+        if success:
+            db.session.commit()
+            flash(f'訂單「{order.order_number}」已更新', 'success')
+            return redirect(url_for('orders_detail', order_id=order.id))
+
+        for error in errors:
+            flash(error, 'error')
+        return render_order_form(order, form_data=request.form)
+
+    return render_order_form(order)
 
 
 @app.route('/orders/<int:order_id>/status', methods=['POST'])
@@ -825,17 +1362,38 @@ def orders_update_status(order_id):
         return redirect(url_for('orders_list'))
 
     new_status = request.form.get('status', '').strip()
-    valid_statuses = ['pending', 'paid', 'shipped', 'done', 'cancelled']
-    if new_status not in valid_statuses:
+    if new_status not in ORDER_STATUS_LABELS:
         flash('無效的訂單狀態', 'error')
+        if request.form.get('return_to') == 'list':
+            return redirect_to_orders_list_from_form()
         return redirect(url_for('orders_detail', order_id=order_id))
 
     order.status = new_status
     order.updated_at = datetime.utcnow()
     db.session.commit()
 
-    flash(f'訂單狀態已更新為「{new_status}」', 'success')
+    flash(f'訂單狀態已更新為「{ORDER_STATUS_LABELS[new_status]}」', 'success')
+    if request.form.get('return_to') == 'list':
+        return redirect_to_orders_list_from_form()
     return redirect(url_for('orders_detail', order_id=order_id))
+
+
+@app.route('/orders/<int:order_id>/delete', methods=['POST'])
+@login_required
+def orders_delete(order_id):
+    order = db.session.get(Order, order_id)
+    if not order:
+        flash('訂單不存在', 'error')
+        return redirect(url_for('orders_list'))
+
+    order_number = order.order_number
+    db.session.delete(order)
+    db.session.commit()
+
+    flash(f'訂單「{order_number}」已刪除', 'success')
+    if request.form.get('return_to') == 'list':
+        return redirect_to_orders_list_from_form()
+    return redirect(url_for('orders_list'))
 
 
 @app.route('/members')
@@ -865,7 +1423,30 @@ def members_detail(member_id):
     orders = Order.query.filter_by(member_id=member_id).order_by(Order.created_at.desc()).all()
 
     admin = db.session.get(Admin, session.get('user_id'))
-    return render_template('members/detail.html', member=member, orders=orders, admin=admin)
+    return render_template('members/detail.html', member=member, orders=orders, admin=admin,
+        status_labels=ORDER_STATUS_LABELS)
+
+
+@app.route('/members/<int:member_id>/edit', methods=['GET', 'POST'])
+@login_required
+def members_edit(member_id):
+    member = db.session.get(Member, member_id)
+    if not member:
+        flash('會員不存在', 'error')
+        return redirect(url_for('members_list'))
+
+    if request.method == 'POST':
+        success, errors = update_member_from_form(member)
+        if success:
+            db.session.commit()
+            flash(f'會員「{member.display_name or member.username}」已更新', 'success')
+            return redirect(url_for('members_detail', member_id=member.id))
+
+        for error in errors:
+            flash(error, 'error')
+        return render_member_form(member, form_data=request.form)
+
+    return render_member_form(member)
 
 
 @app.route('/members/<int:member_id>/toggle-active', methods=['POST'])
@@ -882,7 +1463,46 @@ def members_toggle_active(member_id):
 
     status = '已啟用' if member.is_active else '已停用'
     flash(f'會員「{member.display_name or member.username}」{status}', 'success')
+    if request.form.get('return_to') == 'list':
+        return redirect_to_members_list_from_form()
     return redirect(url_for('members_detail', member_id=member_id))
+
+
+@app.route('/members/<int:member_id>/disable', methods=['POST'])
+@login_required
+def members_disable(member_id):
+    member = db.session.get(Member, member_id)
+    if not member:
+        flash('會員不存在', 'error')
+        return redirect(url_for('members_list'))
+
+    member.is_active = False
+    member.updated_at = datetime.utcnow()
+    db.session.commit()
+
+    flash(f'會員「{member.display_name or member.username}」已停用', 'success')
+    if request.form.get('return_to') == 'list':
+        return redirect_to_members_list_from_form()
+    return redirect(url_for('members_detail', member_id=member_id))
+
+
+@app.route('/members/<int:member_id>/delete', methods=['POST'])
+@login_required
+def members_delete(member_id):
+    member = db.session.get(Member, member_id)
+    if not member:
+        flash('會員不存在', 'error')
+        return redirect(url_for('members_list'))
+
+    name = member.display_name or member.username
+    Order.query.filter_by(member_id=member_id).update({'member_id': None, 'updated_at': datetime.utcnow()})
+    db.session.delete(member)
+    db.session.commit()
+
+    flash(f'會員「{name}」已刪除，相關訂單已保留為訪客訂單', 'success')
+    if request.form.get('return_to') == 'list':
+        return redirect_to_members_list_from_form()
+    return redirect(url_for('members_list'))
 
 
 @app.route('/admins')

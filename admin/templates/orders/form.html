@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}編輯訂單 {{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Order Editor</p>
+        <h2>編輯訂單 {{ order.order_number }}</h2>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('orders_detail', order_id=order.id) }}" class="btn btn-secondary">返回訂單</a>
+        <a href="{{ url_for('orders_list') }}" class="btn btn-secondary">返回列表</a>
+    </div>
+</div>
+
+<div class="detail-section order-summary-panel">
+    <dl class="detail-list">
+        <dt>會員</dt>
+        <dd>{{ order.member.display_name if order.member else '訪客' }}</dd>
+        <dt>課程</dt>
+        <dd>{{ order.product.name if order.product else '已刪除' }}</dd>
+        <dt>建立時間</dt>
+        <dd>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}</dd>
+        <dt>更新時間</dt>
+        <dd>{{ order.updated_at.strftime('%Y-%m-%d %H:%M') if order.updated_at else '-' }}</dd>
+    </dl>
+</div>
+
+<form method="post" class="admin-form admin-form-wide">
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="status">狀態</label>
+            <select id="status" name="status">
+                {% for value, label in status_options %}
+                <option value="{{ value }}" {% if form_data.get('status') == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="quantity">數量</label>
+            <input type="number" id="quantity" name="quantity" min="1" step="1" value="{{ form_data.get('quantity', '1') }}">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="total_price">金額</label>
+        <input type="number" id="total_price" name="total_price" min="0" step="0.01" value="{{ form_data.get('total_price', '0') }}">
+    </div>
+
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="recipient_name">收件人</label>
+            <input type="text" id="recipient_name" name="recipient_name" maxlength="100" value="{{ form_data.get('recipient_name', '') }}">
+        </div>
+
+        <div class="form-row">
+            <label for="recipient_phone">電話</label>
+            <input type="text" id="recipient_phone" name="recipient_phone" maxlength="30" value="{{ form_data.get('recipient_phone', '') }}">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="shipping_address">地址</label>
+        <input type="text" id="shipping_address" name="shipping_address" maxlength="500" value="{{ form_data.get('shipping_address', '') }}">
+    </div>
+
+    <div class="form-row">
+        <label for="note">備註</label>
+        <textarea id="note" name="note" rows="4" maxlength="500">{{ form_data.get('note', '') }}</textarea>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">更新訂單</button>
+        <a href="{{ url_for('orders_detail', order_id=order.id) }}" class="btn btn-secondary">取消</a>
+    </div>
+</form>
+{% endblock %}

@@ -5,6 +5,12 @@
 {% block content %}
 <div class="page-header">
     <h2>訂單 {{ order.order_number }}</h2>
+    <div class="page-actions">
+        <a href="{{ url_for('orders_edit', order_id=order.id) }}" class="btn btn-primary">編輯訂單</a>
+        <form method="POST" action="{{ url_for('orders_delete', order_id=order.id) }}" onsubmit="return confirm('確定要刪除這筆訂單嗎？此操作無法復原。');">
+            <button type="submit" class="btn-danger">刪除訂單</button>
+        </form>
+    </div>
 </div>
 
 <div class="detail-grid">
@@ -13,11 +19,9 @@
             <h3>更新狀態</h3>
             <form method="POST" action="{{ url_for('orders_update_status', order_id=order.id) }}" class="status-form">
                 <select name="status" class="form-select">
-                    <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>pending</option>
-                    <option value="paid" {% if order.status == 'paid' %}selected{% endif %}>paid</option>
-                    <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>shipped</option>
-                    <option value="done" {% if order.status == 'done' %}selected{% endif %}>done</option>
-                    <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>cancelled</option>
+                    {% for value, label in status_options %}
+                    <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
                 </select>
                 <button type="submit" class="btn-primary">更新</button>
             </form>
@@ -55,7 +59,7 @@
                 <dt>狀態</dt>
                 <dd>
                     <span class="status-badge status-{{ order.status }}">
-                        {{ order.status }}
+                        {{ status_labels.get(order.status, order.status) }}
                     </span>
                 </dd>
                 <dt>建立時間</dt>

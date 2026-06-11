@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}編輯經濟數據排程{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Economic Data</p>
+        <h2>編輯排程 {{ job.name }}</h2>
+        <p class="page-description">API key 由 .env 設定；此頁只管理 provider、指標與執行時間。</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('economic_data_jobs') }}" class="btn btn-secondary">返回排程</a>
+    </div>
+</div>
+
+<form method="post" class="admin-form admin-form-wide">
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="name">排程名稱 *</label>
+            <input type="text" id="name" name="name" required maxlength="120" value="{{ form_data.get('name', '') }}">
+        </div>
+
+        <div class="form-row">
+            <label for="provider">Provider</label>
+            <select id="provider" name="provider">
+                {% for provider in ['mock', 'fred', 'bls', 'taiwan', 'metals'] %}
+                <option value="{{ provider }}" {% if form_data.get('provider') == provider %}selected{% endif %}>{{ provider }}</option>
+                {% endfor %}
+            </select>
+            <small>第一版只有 mock 會產生假資料；其他 provider 先保留給 API 串接。</small>
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="series_code">指標</label>
+            <select id="series_code" name="series_code">
+                <option value="">不指定</option>
+                {% for series in series_list %}
+                <option value="{{ series.code }}" {% if form_data.get('series_code') == series.code %}selected{% endif %}>{{ series.category }} / {{ series.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="schedule_type">排程類型</label>
+            <select id="schedule_type" name="schedule_type">
+                <option value="interval_minutes" {% if form_data.get('schedule_type') == 'interval_minutes' %}selected{% endif %}>每 N 分鐘</option>
+                <option value="interval_hours" {% if form_data.get('schedule_type') == 'interval_hours' %}selected{% endif %}>每 N 小時</option>
+                <option value="daily" {% if form_data.get('schedule_type') == 'daily' %}selected{% endif %}>每天固定時間</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="interval_minutes">間隔分鐘</label>
+            <input type="number" id="interval_minutes" name="interval_minutes" min="1" step="1" value="{{ form_data.get('interval_minutes', '1440') }}">
+            <small>每 N 小時請填小時數 x 60，例如 6 小時填 360。</small>
+        </div>
+
+        <div class="form-row">
+            <label for="daily_time">每日執行時間</label>
+            <input type="time" id="daily_time" name="daily_time" value="{{ form_data.get('daily_time', '08:00') }}">
+        </div>
+    </div>
+
+    <div class="form-row checkbox-row">
+        <label>
+            <input type="checkbox" name="is_active" value="1" {% if form_data.get('is_active') == '1' %}checked{% endif %}>
+            啟用排程
+        </label>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">更新排程</button>
+        <a href="{{ url_for('economic_data_jobs') }}" class="btn btn-secondary">取消</a>
+    </div>
+</form>
+{% endblock %}
