@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from functools import wraps
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
@@ -378,6 +379,108 @@ def update_post_from_form(post):
     return True, []
 
 
+def get_product_form_data(product=None):
+    if not product:
+        return {
+            'name': '',
+            'slug': '',
+            'category_id': '',
+            'price': '',
+            'stock': '0',
+            'image_url': '',
+            'description': '',
+            'is_active': '1'
+        }
+
+    return {
+        'name': product.name or '',
+        'slug': product.slug or '',
+        'category_id': str(product.category_id or ''),
+        'price': str(product.price or ''),
+        'stock': str(product.stock or 0),
+        'image_url': product.image_url or '',
+        'description': product.description or '',
+        'is_active': '1' if product.is_active else ''
+    }
+
+
+def render_product_form(product=None, form_data=None, is_edit=False):
+    admin = db.session.get(Admin, session.get('user_id'))
+    categories = ProductCategory.query.order_by(ProductCategory.sort_order, ProductCategory.name).all()
+    return render_template('products/form.html', admin=admin, product=product,
+        categories=categories, form_data=form_data or get_product_form_data(product),
+        is_edit=is_edit)
+
+
+def update_product_from_form(product):
+    name = request.form.get('name', '').strip()
+    slug = request.form.get('slug', '').strip()
+    description = request.form.get('description', '').strip()
+    image_url = request.form.get('image_url', '').strip()
+    category_id_raw = request.form.get('category_id', '').strip()
+    price_raw = request.form.get('price', '').strip()
+    stock_raw = request.form.get('stock', '').strip()
+    is_active = request.form.get('is_active') == '1'
+
+    errors = []
+    if not name:
+        errors.append('請輸入課程名稱')
+    if not slug:
+        errors.append('請輸入 Slug')
+
+    if slug:
+        query = Product.query.filter(Product.slug == slug)
+        if product.id:
+            query = query.filter(Product.id != product.id)
+        if query.first():
+            errors.append('Slug 已被其他課程使用')
+
+    price = None
+    if not price_raw:
+        errors.append('請輸入價格')
+    else:
+        try:
+            price = Decimal(price_raw)
+        except InvalidOperation:
+            errors.append('價格格式不正確')
+        else:
+            if price < 0:
+                errors.append('價格不可小於 0')
+
+    try:
+        stock = int(stock_raw or 0)
+    except ValueError:
+        errors.append('名額格式不正確')
+        stock = 0
+    else:
+        if stock < 0:
+            errors.append('名額不可小於 0')
+
+    category_id = None
+    if category_id_raw:
+        try:
+            category_id = int(category_id_raw)
+        except ValueError:
+            errors.append('分類格式不正確')
+        else:
+            if not db.session.get(ProductCategory, category_id):
+                errors.append('選擇的分類不存在')
+
+    if errors:
+        return False, errors
+
+    product.name = name
+    product.slug = slug
+    product.description = description or None
+    product.image_url = image_url or None
+    product.category_id = category_id
+    product.price = price
+    product.stock = stock
+    product.is_active = is_active
+    product.updated_at = datetime.utcnow()
+    return True, []
+
+
 @app.route('/health')
 def health():
     return jsonify({'status': 'healthy'})
@@ -558,6 +661,24 @@ def posts_toggle_publish(post_id):
     return redirect(url_for('posts_detail', post_id=post_id))
 
 
+@app.route('/posts/<int:post_id>/delete', methods=['POST'])
+@login_required
+def posts_delete(post_id):
+    post = db.session.get(Post, post_id)
+    if not post:
+        flash('文章不存在', 'error')
+        return redirect(url_for('posts_list'))
+
+    title = post.title
+    post.tags = []
+    db.session.execute(text('DELETE FROM post_products WHERE post_id = :post_id'), {'post_id': post_id})
+    db.session.delete(post)
+    db.session.commit()
+
+    flash(f'文章「{title}」已刪除', 'success')
+    return redirect(url_for('posts_list'))
+
+
 @app.route('/products')
 @login_required
 def products_list():
@@ -574,6 +695,27 @@ def products_list():
         page=page, per_page=per_page, total_pages=total_pages, admin=admin)
 
 
+@app.route('/products/new', methods=['GET', 'POST'])
+@login_required
+def products_new():
+    product = Product()
+    if request.method == 'POST':
+        success, errors = update_product_from_form(product)
+        if success:
+            now = datetime.utcnow()
+            product.created_at = now
+            db.session.add(product)
+            db.session.commit()
+            flash(f'課程「{product.name}」已建立', 'success')
+            return redirect(url_for('products_detail', product_id=product.id))
+
+        for error in errors:
+            flash(error, 'error')
+        return render_product_form(product=None, form_data=request.form, is_edit=False)
+
+    return render_product_form(product=None, is_edit=False)
+
+
 @app.route('/products/<int:product_id>')
 @login_required
 def products_detail(product_id):
@@ -584,6 +726,28 @@ def products_detail(product_id):
 
     admin = db.session.get(Admin, session.get('user_id'))
     return render_template('products/detail.html', product=product, admin=admin)
+
+
+@app.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
+@login_required
+def products_edit(product_id):
+    product = db.session.get(Product, product_id)
+    if not product:
+        flash('課程不存在', 'error')
+        return redirect(url_for('products_list'))
+
+    if request.method == 'POST':
+        success, errors = update_product_from_form(product)
+        if success:
+            db.session.commit()
+            flash(f'課程「{product.name}」已更新', 'success')
+            return redirect(url_for('products_detail', product_id=product.id))
+
+        for error in errors:
+            flash(error, 'error')
+        return render_product_form(product=product, form_data=request.form, is_edit=True)
+
+    return render_product_form(product=product, is_edit=True)
 
 
 @app.route('/products/<int:product_id>/toggle-active', methods=['POST'])
@@ -601,6 +765,27 @@ def products_toggle_active(product_id):
     status = '已上架' if product.is_active else '已下架'
     flash(f'課程「{product.name}」{status}', 'success')
     return redirect(url_for('products_detail', product_id=product_id))
+
+
+@app.route('/products/<int:product_id>/delete', methods=['POST'])
+@login_required
+def products_delete(product_id):
+    product = db.session.get(Product, product_id)
+    if not product:
+        flash('課程不存在', 'error')
+        return redirect(url_for('products_list'))
+
+    if Order.query.filter_by(product_id=product_id).first():
+        flash('此課程已有訂單紀錄，無法刪除；請改為下架。', 'error')
+        return redirect(url_for('products_detail', product_id=product_id))
+
+    name = product.name
+    db.session.execute(text('DELETE FROM post_products WHERE product_id = :product_id'), {'product_id': product_id})
+    db.session.delete(product)
+    db.session.commit()
+
+    flash(f'課程「{name}」已刪除', 'success')
+    return redirect(url_for('products_list'))
 
 
 @app.route('/orders')

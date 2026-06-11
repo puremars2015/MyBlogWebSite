@@ -5,6 +5,9 @@
 {% block content %}
 <div class="page-header">
     <h2>課程列表</h2>
+    <div class="page-actions">
+        <a href="{{ url_for('products_new') }}" class="btn btn-primary">新增課程</a>
+    </div>
 </div>
 
 <div class="table-container">
@@ -37,10 +40,14 @@
                 </td>
                 <td>
                     <a href="{{ url_for('products_detail', product_id=product.id) }}" class="btn-link">查看</a>
+                    <a href="{{ url_for('products_edit', product_id=product.id) }}" class="btn-link">編輯</a>
                     <form method="POST" action="{{ url_for('products_toggle_active', product_id=product.id) }}" style="display:inline;">
                         <button type="submit" class="btn-link">
                             {{ '下架' if product.is_active else '上架' }}
                         </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('products_delete', product_id=product.id) }}" style="display:inline;" onsubmit="return confirm('確定要刪除這門課程嗎？已有訂單紀錄的課程無法刪除。');">
+                        <button type="submit" class="btn-link btn-link-danger">刪除</button>
                     </form>
                 </td>
             </tr>

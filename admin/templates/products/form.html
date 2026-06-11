@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '編輯課程' if is_edit else '新增課程' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Course Editor</p>
+        <h2>{{ '編輯課程' if is_edit else '新增課程' }}</h2>
+    </div>
+    <div class="page-actions">
+        {% if is_edit and product %}
+        <a href="{{ url_for('products_detail', product_id=product.id) }}" class="btn btn-secondary">返回課程</a>
+        {% endif %}
+        <a href="{{ url_for('products_list') }}" class="btn btn-secondary">返回列表</a>
+    </div>
+</div>
+
+<form method="post" class="admin-form admin-form-wide">
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="name">課程名稱 *</label>
+            <input type="text" id="name" name="name" required maxlength="200" value="{{ form_data.get('name', '') }}">
+        </div>
+
+        <div class="form-row">
+            <label for="slug">Slug *</label>
+            <input type="text" id="slug" name="slug" required maxlength="200" value="{{ form_data.get('slug', '') }}">
+            <small>用於課程網址，例如 investing-bootcamp</small>
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="category_id">分類</label>
+            <select id="category_id" name="category_id">
+                <option value="">未分類</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if form_data.get('category_id')|int == category.id %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="image_url">課程圖片 URL</label>
+            <input type="text" id="image_url" name="image_url" maxlength="500" value="{{ form_data.get('image_url', '') }}">
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="price">價格 *</label>
+            <input type="number" id="price" name="price" required min="0" step="0.01" value="{{ form_data.get('price', '') }}">
+        </div>
+
+        <div class="form-row">
+            <label for="stock">名額</label>
+            <input type="number" id="stock" name="stock" min="0" step="1" value="{{ form_data.get('stock', '0') }}">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="description">課程描述</label>
+        <textarea id="description" name="description" rows="12">{{ form_data.get('description', '') }}</textarea>
+    </div>
+
+    <div class="form-row checkbox-row">
+        <label>
+            <input type="checkbox" name="is_active" value="1" {% if form_data.get('is_active') == '1' %}checked{% endif %}>
+            上架課程
+        </label>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ '更新課程' if is_edit else '建立課程' }}</button>
+        <a href="{{ url_for('products_list') }}" class="btn btn-secondary">取消</a>
+    </div>
+</form>
+{% endblock %}

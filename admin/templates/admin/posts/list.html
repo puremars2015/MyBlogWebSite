@@ -40,6 +40,9 @@
                             {{ '設為草稿' if post.is_published else '發布' }}
                         </button>
                     </form>
+                    <form method="POST" action="{{ url_for('posts_delete', post_id=post.id) }}" style="display:inline;" onsubmit="return confirm('確定要刪除這篇文章嗎？此操作無法復原。');">
+                        <button type="submit" class="btn-link btn-link-danger">刪除</button>
+                    </form>
                 </td>
             </tr>
             {% else %}

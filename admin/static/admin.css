@@ -217,6 +217,7 @@ button { font-family: inherit; }
     text-decoration: none;
 }
 .btn-link:hover { text-decoration: underline; }
+.btn-link-danger { color: var(--danger); }
 .actions-bar { margin-bottom: 16px; }
 
 /* Dashboard */
@@ -474,12 +475,14 @@ button { font-family: inherit; }
 .form-row input[type=email],
 .form-row input[type=password],
 .form-row input[type=datetime-local],
+.form-row input[type=number],
 .form-row select,
 .form-row textarea,
 .form-group input[type=text],
 .form-group input[type=email],
 .form-group input[type=password],
 .form-group input[type=datetime-local],
+.form-group input[type=number],
 .form-group select {
     background: white;
     border: 1px solid var(--line);
