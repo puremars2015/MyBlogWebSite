@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '編輯文章' if is_edit else '新增文章' }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Post Editor</p>
+        <h2>{{ '編輯文章' if is_edit else '新增文章' }}</h2>
+    </div>
+    <div class="page-actions">
+        {% if is_edit and post %}
+        <a href="{{ url_for('posts_detail', post_id=post.id) }}" class="btn btn-secondary">返回文章</a>
+        {% endif %}
+        <a href="{{ url_for('posts_list') }}" class="btn btn-secondary">返回列表</a>
+    </div>
+</div>
+
+<form method="post" class="admin-form admin-form-wide">
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="title">標題 *</label>
+            <input type="text" id="title" name="title" required maxlength="200" value="{{ form_data.get('title', '') }}">
+        </div>
+
+        <div class="form-row">
+            <label for="slug">Slug *</label>
+            <input type="text" id="slug" name="slug" required maxlength="200" value="{{ form_data.get('slug', '') }}">
+            <small>用於文章網址，例如 investment-basics</small>
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-row">
+            <label for="category_id">分類</label>
+            <select id="category_id" name="category_id">
+                <option value="">未分類</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if form_data.get('category_id')|int == category.id %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="cover_image_url">封面圖 URL</label>
+            <input type="text" id="cover_image_url" name="cover_image_url" maxlength="500" value="{{ form_data.get('cover_image_url', '') }}">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="excerpt">摘要</label>
+        <textarea id="excerpt" name="excerpt" rows="3" maxlength="500">{{ form_data.get('excerpt', '') }}</textarea>
+        <small>建議 80-160 字，會顯示在文章列表。</small>
+    </div>
+
+    <div class="form-row">
+        <label for="content">內容 *</label>
+        <textarea id="content" name="content" rows="16" required>{{ form_data.get('content', '') }}</textarea>
+    </div>
+
+    <div class="form-row">
+        <label for="tags">標籤</label>
+        <input type="text" id="tags" name="tags" value="{{ form_data.get('tags', '') }}">
+        <small>使用逗號分隔，例如 ETF, 資產配置, 風險管理</small>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-row checkbox-row">
+            <label>
+                <input type="checkbox" name="is_published" value="1" {% if form_data.get('is_published') == '1' %}checked{% endif %}>
+                發布文章
+            </label>
+        </div>
+
+        <div class="form-row">
+            <label for="published_at">發布時間</label>
+            <input type="datetime-local" id="published_at" name="published_at" value="{{ form_data.get('published_at', '') }}">
+            <small>發布文章但未填時間時，系統會自動使用目前時間。</small>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ '更新文章' if is_edit else '建立文章' }}</button>
+        <a href="{{ url_for('posts_list') }}" class="btn btn-secondary">取消</a>
+    </div>
+</form>
+{% endblock %}

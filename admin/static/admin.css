@@ -452,6 +452,14 @@ button { font-family: inherit; }
     padding: 24px;
 }
 
+.admin-form-wide { max-width: 980px; }
+
+.form-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .form-row,
 .form-group { margin-bottom: 16px; }
 .form-row label,
@@ -465,10 +473,13 @@ button { font-family: inherit; }
 .form-row input[type=text],
 .form-row input[type=email],
 .form-row input[type=password],
+.form-row input[type=datetime-local],
 .form-row select,
+.form-row textarea,
 .form-group input[type=text],
 .form-group input[type=email],
 .form-group input[type=password],
+.form-group input[type=datetime-local],
 .form-group select {
     background: white;
     border: 1px solid var(--line);
@@ -479,16 +490,25 @@ button { font-family: inherit; }
     width: 100%;
 }
 
+.form-row textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
 .form-row input:focus,
 .form-row select:focus,
+.form-row textarea:focus,
 .form-group input:focus,
 .form-group select:focus {
-    outline: 2px solid rgba(168, 85, 58, 0.35);
+    outline: 2px solid rgba(15, 118, 110, 0.32);
     outline-offset: 1px;
 }
 
 .form-row small { color: var(--faint); display: block; font-size: 0.82em; margin-top: 4px; }
 .form-actions { display: flex; gap: 8px; margin-top: 24px; }
+.checkbox-row { align-items: center; display: flex; }
+.checkbox-row label { align-items: center; display: flex; gap: 8px; margin-bottom: 0; }
+.checkbox-row input[type=checkbox] { accent-color: var(--brand); height: 16px; width: 16px; }
 
 /* Detail view */
 .detail-grid {
@@ -629,7 +649,8 @@ button { font-family: inherit; }
     .stats-grid,
     .stat-grid,
     .dashboard-panels,
-    .detail-grid { grid-template-columns: 1fr; }
+    .detail-grid,
+    .form-grid { grid-template-columns: 1fr; }
     .stat-card-featured { grid-column: auto; }
     .quick-actions { grid-template-columns: 1fr; }
     .detail-card dl,

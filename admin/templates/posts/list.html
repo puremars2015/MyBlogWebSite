@@ -5,6 +5,9 @@
 {% block content %}
 <div class="page-header">
     <h2>文章列表</h2>
+    <div class="page-actions">
+        <a href="{{ url_for('posts_new') }}" class="btn btn-primary">新增文章</a>
+    </div>
 </div>
 
 <div class="table-container">
@@ -35,6 +38,7 @@
                 <td>{{ post.published_at.strftime('%Y-%m-%d') if post.published_at else '-' }}</td>
                 <td>
                     <a href="{{ url_for('posts_detail', post_id=post.id) }}" class="btn-link">查看</a>
+                    <a href="{{ url_for('posts_edit', post_id=post.id) }}" class="btn-link">編輯</a>
                     <form method="POST" action="{{ url_for('posts_toggle_publish', post_id=post.id) }}" style="display:inline;">
                         <button type="submit" class="btn-link">
                             {{ '設為草稿' if post.is_published else '發布' }}

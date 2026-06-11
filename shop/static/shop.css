@@ -45,8 +45,9 @@ a {
     margin: 0 auto;
     padding: 0 1.5rem;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
+    gap: 3rem;
 }
 
 .site-name {
@@ -54,6 +55,7 @@ a {
     font-weight: 800;
     letter-spacing: 0.04em;
     color: var(--accent-dark);
+    flex-shrink: 0;
 }
 
 .site-nav {

@@ -265,6 +265,119 @@ class Order(db.Model):
         }
 
 
+def get_post_form_data(post=None):
+    if not post:
+        return {
+            'title': '',
+            'slug': '',
+            'category_id': '',
+            'excerpt': '',
+            'content': '',
+            'cover_image_url': '',
+            'tags': '',
+            'is_published': '',
+            'published_at': ''
+        }
+
+    return {
+        'title': post.title or '',
+        'slug': post.slug or '',
+        'category_id': str(post.category_id or ''),
+        'excerpt': post.excerpt or '',
+        'content': post.content or '',
+        'cover_image_url': post.cover_image_url or '',
+        'tags': ', '.join(tag.name for tag in post.tags),
+        'is_published': '1' if post.is_published else '',
+        'published_at': post.published_at.strftime('%Y-%m-%dT%H:%M') if post.published_at else ''
+    }
+
+
+def render_post_form(post=None, form_data=None, is_edit=False):
+    admin = db.session.get(Admin, session.get('user_id'))
+    categories = Category.query.order_by(Category.name).all()
+    return render_template('posts/form.html', admin=admin, post=post,
+        categories=categories, form_data=form_data or get_post_form_data(post),
+        is_edit=is_edit)
+
+
+def tags_from_input(tags_input):
+    names = []
+    for raw_name in tags_input.replace('，', ',').split(','):
+        name = raw_name.strip()
+        if name and name not in names:
+            names.append(name)
+
+    tags = []
+    for name in names:
+        tag = Tag.query.filter_by(name=name).first()
+        if not tag:
+            tag = Tag(name=name)
+            db.session.add(tag)
+        tags.append(tag)
+    return tags
+
+
+def update_post_from_form(post):
+    title = request.form.get('title', '').strip()
+    slug = request.form.get('slug', '').strip()
+    content = request.form.get('content', '').strip()
+    excerpt = request.form.get('excerpt', '').strip()
+    cover_image_url = request.form.get('cover_image_url', '').strip()
+    tags_input = request.form.get('tags', '').strip()
+    category_id_raw = request.form.get('category_id', '').strip()
+    published_at_raw = request.form.get('published_at', '').strip()
+    is_published = request.form.get('is_published') == '1'
+
+    errors = []
+    if not title:
+        errors.append('請輸入文章標題')
+    if not slug:
+        errors.append('請輸入 Slug')
+    if not content:
+        errors.append('請輸入文章內容')
+
+    if slug:
+        query = Post.query.filter(Post.slug == slug)
+        if post.id:
+            query = query.filter(Post.id != post.id)
+        if query.first():
+            errors.append('Slug 已被其他文章使用')
+
+    category_id = None
+    if category_id_raw:
+        try:
+            category_id = int(category_id_raw)
+        except ValueError:
+            errors.append('分類格式不正確')
+        else:
+            if not db.session.get(Category, category_id):
+                errors.append('選擇的分類不存在')
+
+    published_at = None
+    if published_at_raw:
+        try:
+            published_at = datetime.fromisoformat(published_at_raw)
+        except ValueError:
+            errors.append('發布時間格式不正確')
+    elif is_published:
+        published_at = datetime.utcnow()
+
+    if errors:
+        return False, errors
+
+    post.title = title
+    post.slug = slug
+    post.content = content
+    post.excerpt = excerpt or None
+    post.cover_image_url = cover_image_url or None
+    post.category_id = category_id
+    post.is_published = is_published
+    post.published_at = published_at
+    post.tags = tags_from_input(tags_input)
+    post.updated_at = datetime.utcnow()
+    return True, []
+
+
 @app.route('/health')
 def health():
     return jsonify({'status': 'healthy'})
@@ -373,6 +486,27 @@ def posts_list():
         page=page, per_page=per_page, total_pages=total_pages, admin=admin)
 
 
+@app.route('/posts/new', methods=['GET', 'POST'])
+@login_required
+def posts_new():
+    post = Post()
+    if request.method == 'POST':
+        success, errors = update_post_from_form(post)
+        if success:
+            now = datetime.utcnow()
+            post.created_at = now
+            db.session.add(post)
+            db.session.commit()
+            flash(f'文章「{post.title}」已建立', 'success')
+            return redirect(url_for('posts_detail', post_id=post.id))
+
+        for error in errors:
+            flash(error, 'error')
+        return render_post_form(post=None, form_data=request.form, is_edit=False)
+
+    return render_post_form(post=None, is_edit=False)
+
+
 @app.route('/posts/<int:post_id>')
 @login_required
 def posts_detail(post_id):
@@ -383,6 +517,28 @@ def posts_detail(post_id):
 
     admin = db.session.get(Admin, session.get('user_id'))
     return render_template('posts/detail.html', post=post, admin=admin)
+
+
+@app.route('/posts/<int:post_id>/edit', methods=['GET', 'POST'])
+@login_required
+def posts_edit(post_id):
+    post = db.session.get(Post, post_id)
+    if not post:
+        flash('文章不存在', 'error')
+        return redirect(url_for('posts_list'))
+
+    if request.method == 'POST':
+        success, errors = update_post_from_form(post)
+        if success:
+            db.session.commit()
+            flash(f'文章「{post.title}」已更新', 'success')
+            return redirect(url_for('posts_detail', post_id=post.id))
+
+        for error in errors:
+            flash(error, 'error')
+        return render_post_form(post=post, form_data=request.form, is_edit=True)
+
+    return render_post_form(post=post, is_edit=True)
 
 
 @app.route('/posts/<int:post_id>/toggle-publish', methods=['POST'])
