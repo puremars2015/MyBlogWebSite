@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 
 from flask import Flask, jsonify, render_template, request
@@ -23,6 +23,18 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+GMT_PLUS_8 = timezone(timedelta(hours=8))
+
+
+def now_gmt8():
+    return datetime.now(GMT_PLUS_8).replace(tzinfo=None)
+
+
+def to_gmt8_naive(value):
+    if value is None or value.tzinfo is None:
+        return value
+    return value.astimezone(GMT_PLUS_8).replace(tzinfo=None)
+
 
 class EconomicSeries(db.Model):
     __tablename__ = 'economic_series'
@@ -42,8 +54,8 @@ class EconomicSeries(db.Model):
     fred_code = db.Column(db.Unicode(80))
     yfinance_symbol = db.Column(db.Unicode(40))
     legacy_cleaned = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
 
 class EconomicObservation(db.Model):
@@ -55,7 +67,7 @@ class EconomicObservation(db.Model):
     previous_value = db.Column(db.Numeric(18, 4))
     change_label = db.Column(db.Unicode(40))
     status_label = db.Column(db.Unicode(20), default='flat')
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
 
     series = db.relationship('EconomicSeries', lazy='joined')
 
@@ -70,8 +82,8 @@ class EconomicEvent(db.Model):
     description = db.Column(db.Unicode(500))
     source_name = db.Column(db.Unicode(120))
     source_url = db.Column(db.Unicode(500))
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
 
 class EconomicFetchJob(db.Model):
@@ -91,8 +103,8 @@ class EconomicFetchJob(db.Model):
     derived_sources = db.Column(db.Unicode(200))
     derived_op = db.Column(db.Unicode(20))
     yfinance_symbol = db.Column(db.Unicode(40))
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
 
 class EconomicFetchRun(db.Model):
@@ -152,6 +164,27 @@ SERIES_SEED = [
         'code': 'txf_price', 'name': '台指期近月',
         'category': '台灣市場價格', 'description': '台灣加權股價指數期貨近月合約前一交易日收盤價',
         'unit': '點', 'source_name': 'TAIFEX', 'sort_order': 24,
+        'region': 'TW', 'frequency': 'daily', 'transformation': 'level',
+        'fred_code': '', 'yfinance_symbol': '',
+    },
+    {
+        'code': 'tx_volume_share', 'name': '大台成交量占比',
+        'category': '期貨結構', 'description': 'TX 在 TX/MTX/TMF 全契約合計成交量中的占比',
+        'unit': '%', 'source_name': 'TAIFEX', 'sort_order': 1,
+        'region': 'TW', 'frequency': 'daily', 'transformation': 'level',
+        'fred_code': '', 'yfinance_symbol': '',
+    },
+    {
+        'code': 'mtx_volume_share', 'name': '小台成交量占比',
+        'category': '期貨結構', 'description': 'MTX 在 TX/MTX/TMF 全契約合計成交量中的占比',
+        'unit': '%', 'source_name': 'TAIFEX', 'sort_order': 2,
+        'region': 'TW', 'frequency': 'daily', 'transformation': 'level',
+        'fred_code': '', 'yfinance_symbol': '',
+    },
+    {
+        'code': 'tmf_volume_share', 'name': '微台成交量占比',
+        'category': '期貨結構', 'description': 'TMF 在 TX/MTX/TMF 全契約合計成交量中的占比',
+        'unit': '%', 'source_name': 'TAIFEX', 'sort_order': 3,
         'region': 'TW', 'frequency': 'daily', 'transformation': 'level',
         'fred_code': '', 'yfinance_symbol': '',
     },
@@ -270,15 +303,29 @@ SERIES_SEED = [
     },
     {
         'code': 'tw_foreign_net', 'name': '台股外資買賣超',
-        'category': '資金流', 'description': '台股外資及陸資買賣超 (TWSE 開放 API)',
+        'category': '資金流', 'description': '台股外資及陸資每日收盤買賣超 (TWSE 開放 API)',
+        'unit': '億元', 'source_name': 'TWSE 開放 API', 'sort_order': 1,
+        'region': 'TW', 'frequency': 'daily', 'transformation': 'level',
+        'fred_code': '', 'yfinance_symbol': '',
+    },
+    {
+        'code': 'tw_trust_net', 'name': '台股投信買賣超',
+        'category': '資金流', 'description': '台股投信每日收盤買賣超 (TWSE 開放 API)',
         'unit': '億元', 'source_name': 'TWSE 開放 API', 'sort_order': 2,
+        'region': 'TW', 'frequency': 'daily', 'transformation': 'level',
+        'fred_code': '', 'yfinance_symbol': '',
+    },
+    {
+        'code': 'tw_dealer_net', 'name': '台股自營商買賣超',
+        'category': '資金流', 'description': '台股自營商(自行買賣+避險)每日收盤買賣超 (TWSE 開放 API)',
+        'unit': '億元', 'source_name': 'TWSE 開放 API', 'sort_order': 3,
         'region': 'TW', 'frequency': 'daily', 'transformation': 'level',
         'fred_code': '', 'yfinance_symbol': '',
     },
     {
         'code': 'tw_margin_balance', 'name': '台股融資餘額',
         'category': '資金流', 'description': '台股整體融資餘額 (TWSE 開放 API)',
-        'unit': '千元', 'source_name': 'TWSE 開放 API', 'sort_order': 3,
+        'unit': '千元', 'source_name': 'TWSE 開放 API', 'sort_order': 4,
         'region': 'TW', 'frequency': 'daily', 'transformation': 'level',
         'fred_code': '', 'yfinance_symbol': '',
     },
@@ -325,6 +372,12 @@ JOB_SEED = [
      'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '17:00'},
     {'name': 'TAIFEX: 台指期近月收盤', 'provider': 'taifex', 'series_code': 'txf_price',
      'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '08:00'},
+    {'name': 'TAIFEX: 大台成交量占比', 'provider': 'taifex', 'series_code': 'tx_volume_share',
+     'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '08:02'},
+    {'name': 'TAIFEX: 小台成交量占比', 'provider': 'taifex', 'series_code': 'mtx_volume_share',
+     'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '08:03'},
+    {'name': 'TAIFEX: 微台成交量占比', 'provider': 'taifex', 'series_code': 'tmf_volume_share',
+     'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '08:04'},
     {'name': 'yfinance: 黃金現貨', 'provider': 'yfinance', 'series_code': 'gold_spot_usd',
      'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '20:00',
      'yfinance_symbol': 'GC=F'},
@@ -338,6 +391,10 @@ JOB_SEED = [
      'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '09:00'},
     {'name': 'TWSE: 外資買賣超', 'provider': 'twse_openapi', 'series_code': 'tw_foreign_net',
      'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '17:00'},
+    {'name': 'TWSE: 投信買賣超', 'provider': 'twse_openapi', 'series_code': 'tw_trust_net',
+     'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '17:01'},
+    {'name': 'TWSE: 自營商買賣超', 'provider': 'twse_openapi', 'series_code': 'tw_dealer_net',
+     'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '17:02'},
     {'name': 'TWSE: 融資餘額', 'provider': 'twse_openapi', 'series_code': 'tw_margin_balance',
      'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '17:05'},
     {'name': 'Taiwan Economic: 央行政策利率', 'provider': 'taiwan_economic', 'series_code': 'taiwan_policy_rate',
@@ -566,7 +623,7 @@ def ensure_schema_and_seed():
     _cleanup_obsolete_series()
 
     existing_series = {s.code: s for s in EconomicSeries.query.all()}
-    now = datetime.utcnow()
+    now = now_gmt8()
     for entry in SERIES_SEED:
         code = entry['code']
         if code in existing_series:
@@ -677,9 +734,9 @@ def ensure_txf_series():
 
 def parse_observed_at(raw_value):
     if not raw_value:
-        return datetime.utcnow()
+        return now_gmt8()
     try:
-        return datetime.fromisoformat(str(raw_value).replace('Z', '+00:00')).replace(tzinfo=None)
+        return to_gmt8_naive(datetime.fromisoformat(str(raw_value).replace('Z', '+00:00')))
     except ValueError:
         return None
 
@@ -757,7 +814,7 @@ def dashboard_cards():
     series_list = EconomicSeries.query.order_by(EconomicSeries.category, EconomicSeries.sort_order, EconomicSeries.id).all()
     for series in series_list:
         obs = latest_observation(series.id)
-        has_data = obs is not None and obs.value not in (None, 0)
+        has_data = obs is not None and obs.value is not None
         value = float(obs.value) if (obs and obs.value is not None) else None
         cards.append({
             'series': series,
@@ -801,7 +858,7 @@ def api_summary():
 def api_agent_dashboard():
     ensure_schema_and_seed()
     cards = dashboard_cards()
-    now = datetime.utcnow()
+    now = now_gmt8()
 
     categories_payload = {}
     for card in cards:
@@ -822,7 +879,7 @@ def api_agent_dashboard():
         })
 
     return jsonify({
-        'generated_at': now.isoformat() + 'Z',
+        'generated_at': datetime.now(GMT_PLUS_8).isoformat(),
         'note': '此 API 提供給 AI Agent 一次讀取所有 dashboard 指標；has_data=false 表示尚未抓到資料。',
         'temperature_summary': summarize_temperature(cards),
         'categories': categories_payload,
@@ -889,7 +946,7 @@ def api_txf_price():
     source_name = payload.get('source') or payload.get('source_name')
     if source_name:
         series.source_name = str(source_name).strip()[:120]
-    series.updated_at = datetime.utcnow()
+    series.updated_at = now_gmt8()
 
     observation = EconomicObservation(
         series_id=series.id,
@@ -953,7 +1010,7 @@ def api_ingest_series(code):
     source_name = payload.get('source') or payload.get('source_name')
     if source_name:
         series.source_name = str(source_name).strip()[:120]
-    series.updated_at = datetime.utcnow()
+    series.updated_at = now_gmt8()
 
     observation = EconomicObservation(
         series_id=series.id,
@@ -1023,7 +1080,7 @@ def scheduler_status():
         rows=rows,
         recent_runs=recent_runs,
         counts=counts,
-        now=datetime.utcnow(),
+        now=now_gmt8(),
     )
 
 

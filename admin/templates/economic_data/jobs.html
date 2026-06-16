@@ -73,9 +73,13 @@
                     </td>
                     <td>
                         <a href="{{ url_for('economic_data_job_edit', job_id=job.id) }}" class="btn-link">編輯</a>
+                        {% if job.provider == 'mock' %}
                         <form method="POST" action="{{ url_for('economic_data_job_run', job_id=job.id) }}" style="display:inline;">
                             <button type="submit" class="btn-link">手動執行</button>
                         </form>
+                        {% else %}
+                        <span class="table-note">由 dashboard-scheduler 執行</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% else %}

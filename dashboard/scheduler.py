@@ -1,10 +1,10 @@
 import logging
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from app import (EconomicFetchJob, EconomicFetchRun, EconomicObservation,
-    EconomicSeries, app, db, ensure_schema_and_seed)
+    EconomicSeries, app, db, ensure_schema_and_seed, now_gmt8)
 from providers import get_provider
 
 
@@ -51,7 +51,7 @@ def _apply_result(series, result):
 
 
 def execute_job(job):
-    started_at = datetime.utcnow()
+    started_at = now_gmt8()
     run = EconomicFetchRun(job_id=job.id, started_at=started_at, status='running')
     db.session.add(run)
     db.session.flush()
@@ -78,7 +78,7 @@ def execute_job(job):
         job.last_status = 'error'
         job.last_message = run.message
     finally:
-        now = datetime.utcnow()
+        now = now_gmt8()
         run.finished_at = now
         job.last_run_at = now
         job.next_run_at = next_run_for(job, now)
@@ -87,7 +87,7 @@ def execute_job(job):
 
 
 def tick():
-    now = datetime.utcnow()
+    now = now_gmt8()
     jobs = EconomicFetchJob.query.filter(
         EconomicFetchJob.is_active == True,
         (EconomicFetchJob.next_run_at == None) | (EconomicFetchJob.next_run_at <= now)

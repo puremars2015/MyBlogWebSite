@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import Flask, jsonify, request, render_template, url_for, session, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
@@ -35,6 +35,12 @@ EXPECTED_USER_TYPE = os.getenv('EXPECTED_USER_TYPE', 'member')
 # 跨子網域 URL
 SHOP_HOST = os.getenv('SHOP_HOST', 'http://shop.localhost')
 db = SQLAlchemy(app)
+
+GMT_PLUS_8 = timezone(timedelta(hours=8))
+
+
+def now_gmt8():
+    return datetime.now(GMT_PLUS_8).replace(tzinfo=None)
 
 
 # ============================================================
@@ -120,8 +126,8 @@ class Post(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     is_published = db.Column(db.Boolean, default=True)
     published_at = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
     category = db.relationship('Category', lazy='joined')
     tags = db.relationship('Tag', secondary=post_tags, lazy='selectin')
@@ -179,8 +185,8 @@ class Member(db.Model):
     last_login_at = db.Column(db.DateTime)
     failed_login_count = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
 
 class Product(db.Model):
@@ -194,8 +200,8 @@ class Product(db.Model):
     image_url = db.Column(db.Unicode(500))
     category_id = db.Column(db.Integer, db.ForeignKey('product_categories.id'))
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
     def to_dict(self):
         return {
@@ -326,7 +332,7 @@ def member_login():
             flash('此帳號已被停用,請聯絡管理員', 'error')
             return render_template('login.html', next=next_url)
 
-        member.last_login_at = datetime.utcnow()
+        member.last_login_at = now_gmt8()
         member.failed_login_count = 0
         member.locked_until = None
         db.session.commit()
@@ -363,7 +369,7 @@ def member_me_edit():
     member.bio = request.form.get('bio') or None
     avatar = (request.form.get('avatar_url') or '').strip() or None
     member.avatar_url = avatar
-    member.updated_at = datetime.utcnow()
+    member.updated_at = now_gmt8()
     db.session.commit()
     flash('個人資料已更新', 'success')
     return redirect(url_for('member_me'))
@@ -484,7 +490,7 @@ def create_post():
     if not cat:
         return jsonify({'error': 'Category not found'}), 400
 
-    now = datetime.utcnow()
+    now = now_gmt8()
     post = Post(
         slug=slug,
         title=title,
@@ -550,7 +556,7 @@ def update_post(post_id):
         tags = Tag.query.filter(Tag.id.in_(data['tag_ids'])).all()
         post.tags = tags
 
-    post.updated_at = datetime.utcnow()
+    post.updated_at = now_gmt8()
     db.session.commit()
     return jsonify(post.to_dict(include_tags=True, include_products=True))
 

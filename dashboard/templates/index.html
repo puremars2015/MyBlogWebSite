@@ -6,7 +6,7 @@
 {% set txf_card = cards|selectattr('series.code', 'equalto', 'txf_price')|list|first if cards else None %}
 {% set txf_waiting = txf_card and not txf_card.has_data %}
 
-{% set tab_categories = ['大盤指數', '市場情緒', '利率', '通膨', '景氣', '資金流', '商品'] %}
+{% set tab_categories = ['大盤指數', '市場情緒', '利率', '通膨', '景氣', '資金流', '期貨結構', '商品'] %}
 {% set ns = namespace(visible=[]) %}
 {% for cat in tab_categories %}
     {% if cards|selectattr('series.category', 'equalto', cat)|list %}

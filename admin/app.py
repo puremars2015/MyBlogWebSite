@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for, flash
@@ -35,6 +35,12 @@ EXPECTED_USER_TYPE = os.getenv('EXPECTED_USER_TYPE', 'admin')
 
 db = SQLAlchemy(app)
 
+GMT_PLUS_8 = timezone(timedelta(hours=8))
+
+
+def now_gmt8():
+    return datetime.now(GMT_PLUS_8).replace(tzinfo=None)
+
 
 def login_required(f):
     @wraps(f)
@@ -61,8 +67,8 @@ class Admin(db.Model):
     last_login_at = db.Column(db.DateTime)
     failed_login_count = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
     def to_dict(self):
         return {
@@ -90,8 +96,8 @@ class Member(db.Model):
     last_login_at = db.Column(db.DateTime)
     failed_login_count = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
     def to_dict(self):
         return {
@@ -152,8 +158,8 @@ class Post(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     is_published = db.Column(db.Boolean, default=True)
     published_at = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
     category = db.relationship('Category', lazy='joined')
     tags = db.relationship('Tag', secondary=post_tags, lazy='selectin')
@@ -206,8 +212,8 @@ class Product(db.Model):
     image_url = db.Column(db.Unicode(500))
     category_id = db.Column(db.Integer, db.ForeignKey('product_categories.id'))
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
     category = db.relationship('ProductCategory', lazy='joined')
 
@@ -240,8 +246,8 @@ class Order(db.Model):
     recipient_phone = db.Column(db.Unicode(30))
     shipping_address = db.Column(db.Unicode(500))
     note = db.Column(db.Unicode(500))
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
     member = db.relationship('Member', lazy='joined')
     product = db.relationship('Product', lazy='joined')
@@ -277,8 +283,8 @@ class EconomicSeries(db.Model):
     source_name = db.Column(db.Unicode(120))
     source_url = db.Column(db.Unicode(500))
     sort_order = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
 
 class EconomicObservation(db.Model):
@@ -290,7 +296,7 @@ class EconomicObservation(db.Model):
     previous_value = db.Column(db.Numeric(18, 4))
     change_label = db.Column(db.Unicode(40))
     status_label = db.Column(db.Unicode(20), default='flat')
-    created_at = db.Column(db.DateTime, default=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
 
     series = db.relationship('EconomicSeries', lazy='joined')
 
@@ -305,8 +311,8 @@ class EconomicEvent(db.Model):
     description = db.Column(db.Unicode(500))
     source_name = db.Column(db.Unicode(120))
     source_url = db.Column(db.Unicode(500))
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
 
 class EconomicFetchJob(db.Model):
@@ -323,8 +329,8 @@ class EconomicFetchJob(db.Model):
     last_run_at = db.Column(db.DateTime)
     last_status = db.Column(db.Unicode(20))
     last_message = db.Column(db.Unicode(500))
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+    created_at = db.Column(db.DateTime, default=now_gmt8)
+    updated_at = db.Column(db.DateTime, default=now_gmt8, onupdate=now_gmt8)
 
 
 class EconomicFetchRun(db.Model):
@@ -463,7 +469,7 @@ def update_post_from_form(post):
         except ValueError:
             errors.append('發布時間格式不正確')
     elif is_published:
-        published_at = datetime.utcnow()
+        published_at = now_gmt8()
 
     if errors:
         return False, errors
@@ -477,7 +483,7 @@ def update_post_from_form(post):
     post.is_published = is_published
     post.published_at = published_at
     post.tags = tags_from_input(tags_input)
-    post.updated_at = datetime.utcnow()
+    post.updated_at = now_gmt8()
     return True, []
 
 
@@ -579,7 +585,7 @@ def update_product_from_form(product):
     product.price = price
     product.stock = stock
     product.is_active = is_active
-    product.updated_at = datetime.utcnow()
+    product.updated_at = now_gmt8()
     return True, []
 
 
@@ -664,7 +670,7 @@ def update_order_from_form(order):
     order.recipient_phone = recipient_phone or None
     order.shipping_address = shipping_address or None
     order.note = note or None
-    order.updated_at = datetime.utcnow()
+    order.updated_at = now_gmt8()
     return True, []
 
 
@@ -735,7 +741,7 @@ def update_member_from_form(member):
     member.avatar_url = avatar_url or None
     member.bio = bio or None
     member.is_active = is_active
-    member.updated_at = datetime.utcnow()
+    member.updated_at = now_gmt8()
     return True, []
 
 
@@ -748,7 +754,7 @@ def ensure_economic_schema_and_seed():
     db.create_all()
 
     if EconomicSeries.query.count() == 0:
-        now = datetime.utcnow()
+        now = now_gmt8()
         for code, name, category, description, unit, source_name, sort_order, value, previous, change, status in ECONOMIC_SERIES_SEED:
             series = EconomicSeries(code=code, name=name, category=category,
                 description=description, unit=unit, source_name=source_name,
@@ -760,14 +766,14 @@ def ensure_economic_schema_and_seed():
                 previous_value=previous, change_label=change, status_label=status))
 
     if EconomicEvent.query.count() == 0:
-        now = datetime.utcnow()
+        now = now_gmt8()
         for slug, title, category, days, description, source_name in ECONOMIC_EVENT_SEED:
             db.session.add(EconomicEvent(slug=slug, title=title, category=category,
                 event_at=now + timedelta(days=days), description=description,
                 source_name=source_name))
 
     if EconomicFetchJob.query.count() == 0:
-        now = datetime.utcnow()
+        now = now_gmt8()
         for name, provider, series_code, schedule_type, interval_minutes, daily_time in ECONOMIC_JOB_SEED:
             db.session.add(EconomicFetchJob(name=name, provider=provider,
                 series_code=series_code, schedule_type=schedule_type,
@@ -780,7 +786,7 @@ def ensure_economic_schema_and_seed():
 
 
 def economic_next_run(job, now=None):
-    now = now or datetime.utcnow()
+    now = now or now_gmt8()
     if job.schedule_type == 'interval_minutes':
         return now + timedelta(minutes=max(job.interval_minutes or 60, 1))
     if job.schedule_type == 'interval_hours':
@@ -838,7 +844,7 @@ def update_economic_job_from_form(job):
     errors = []
     if not name:
         errors.append('請輸入排程名稱')
-    if provider not in ['mock', 'fred', 'bls', 'taiwan', 'metals']:
+    if provider not in ['mock', 'fred', 'bls', 'yfinance', 'yfinance_options', 'twse_openapi', 'derived', 'cboe', 'cnn_official_fear_greed', 'taiwan_economic', 'taifex', 'taiwan', 'metals']:
         errors.append('Provider 不正確')
     if schedule_type not in ['interval_minutes', 'interval_hours', 'daily']:
         errors.append('排程類型不正確')
@@ -873,12 +879,12 @@ def update_economic_job_from_form(job):
     job.daily_time = daily_time or '08:00'
     job.is_active = is_active
     job.next_run_at = economic_next_run(job) if is_active else None
-    job.updated_at = datetime.utcnow()
+    job.updated_at = now_gmt8()
     return True, []
 
 
 def run_economic_job(job):
-    started_at = datetime.utcnow()
+    started_at = now_gmt8()
     run = EconomicFetchRun(job_id=job.id, started_at=started_at, status='running')
     db.session.add(run)
     db.session.flush()
@@ -894,7 +900,7 @@ def run_economic_job(job):
                 bump = Decimal('0.01') if series.unit == '%' else Decimal('1.00')
                 value = base + bump
                 db.session.add(EconomicObservation(series_id=series.id,
-                    observed_at=datetime.utcnow(), value=value, previous_value=base,
+                    observed_at=now_gmt8(), value=value, previous_value=base,
                     change_label='手動 Mock 更新', status_label='up'))
                 message = f'Mock updated {series.code} from {base} to {value}.'
         else:
@@ -910,7 +916,7 @@ def run_economic_job(job):
         job.last_status = 'error'
         job.last_message = str(exc)
     finally:
-        now = datetime.utcnow()
+        now = now_gmt8()
         run.finished_at = now
         job.last_run_at = now
         job.next_run_at = economic_next_run(job, now) if job.is_active else None
@@ -945,20 +951,20 @@ def login():
             flash('帳號已被停用', 'error')
             return render_template('login.html')
 
-        if admin.locked_until and admin.locked_until > datetime.utcnow():
+        if admin.locked_until and admin.locked_until > now_gmt8():
             flash('帳號已鎖定，請稍後再試', 'error')
             return render_template('login.html')
 
         if not check_password_hash(admin.password_hash, password):
             admin.failed_login_count = (admin.failed_login_count or 0) + 1
             if admin.failed_login_count >= 5:
-                admin.locked_until = datetime.utcnow()
+                admin.locked_until = now_gmt8()
             db.session.commit()
             flash('帳號或密碼錯誤', 'error')
             return render_template('login.html')
 
         admin.failed_login_count = 0
-        admin.last_login_at = datetime.utcnow()
+        admin.last_login_at = now_gmt8()
         db.session.commit()
 
         session['user_id'] = admin.id
@@ -1091,7 +1097,7 @@ def posts_new():
     if request.method == 'POST':
         success, errors = update_post_from_form(post)
         if success:
-            now = datetime.utcnow()
+            now = now_gmt8()
             post.created_at = now
             db.session.add(post)
             db.session.commit()
@@ -1148,7 +1154,7 @@ def posts_toggle_publish(post_id):
         return redirect(url_for('posts_list'))
 
     post.is_published = not post.is_published
-    post.updated_at = datetime.utcnow()
+    post.updated_at = now_gmt8()
     db.session.commit()
 
     status = '已發布' if post.is_published else '已設為草稿'
@@ -1197,7 +1203,7 @@ def products_new():
     if request.method == 'POST':
         success, errors = update_product_from_form(product)
         if success:
-            now = datetime.utcnow()
+            now = now_gmt8()
             product.created_at = now
             db.session.add(product)
             db.session.commit()
@@ -1254,7 +1260,7 @@ def products_toggle_active(product_id):
         return redirect(url_for('products_list'))
 
     product.is_active = not product.is_active
-    product.updated_at = datetime.utcnow()
+    product.updated_at = now_gmt8()
     db.session.commit()
 
     status = '已上架' if product.is_active else '已下架'
@@ -1369,7 +1375,7 @@ def orders_update_status(order_id):
         return redirect(url_for('orders_detail', order_id=order_id))
 
     order.status = new_status
-    order.updated_at = datetime.utcnow()
+    order.updated_at = now_gmt8()
     db.session.commit()
 
     flash(f'訂單狀態已更新為「{ORDER_STATUS_LABELS[new_status]}」', 'success')
@@ -1458,7 +1464,7 @@ def members_toggle_active(member_id):
         return redirect(url_for('members_list'))
 
     member.is_active = not member.is_active
-    member.updated_at = datetime.utcnow()
+    member.updated_at = now_gmt8()
     db.session.commit()
 
     status = '已啟用' if member.is_active else '已停用'
@@ -1477,7 +1483,7 @@ def members_disable(member_id):
         return redirect(url_for('members_list'))
 
     member.is_active = False
-    member.updated_at = datetime.utcnow()
+    member.updated_at = now_gmt8()
     db.session.commit()
 
     flash(f'會員「{member.display_name or member.username}」已停用', 'success')
@@ -1495,7 +1501,7 @@ def members_delete(member_id):
         return redirect(url_for('members_list'))
 
     name = member.display_name or member.username
-    Order.query.filter_by(member_id=member_id).update({'member_id': None, 'updated_at': datetime.utcnow()})
+    Order.query.filter_by(member_id=member_id).update({'member_id': None, 'updated_at': now_gmt8()})
     db.session.delete(member)
     db.session.commit()
 
@@ -1624,7 +1630,7 @@ def admins_edit(admin_id):
         target_admin.display_name = display_name
         target_admin.role = role
         target_admin.is_active = is_active
-        target_admin.updated_at = datetime.utcnow()
+        target_admin.updated_at = now_gmt8()
         db.session.commit()
 
         flash(f'管理員「{target_admin.username}」已更新', 'success')
@@ -1653,7 +1659,7 @@ def admins_delete(admin_id):
         return redirect(url_for('admins_list'))
 
     target_admin.is_active = False
-    target_admin.updated_at = datetime.utcnow()
+    target_admin.updated_at = now_gmt8()
     db.session.commit()
 
     flash(f'管理員「{target_admin.username}」已停用', 'success')
@@ -1674,7 +1680,7 @@ def admins_reset_password(admin_id):
         return redirect(url_for('admins_detail', admin_id=admin_id))
 
     target_admin.password_hash = generate_password_hash(new_password, method='pbkdf2:sha256')
-    target_admin.updated_at = datetime.utcnow()
+    target_admin.updated_at = now_gmt8()
     db.session.commit()
 
     flash(f'管理員「{target_admin.username}」密碼已重設', 'success')

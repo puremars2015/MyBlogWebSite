@@ -68,10 +68,9 @@ curl http://localhost:5003/api/agent/dashboard | jq .   # 給 AI Agent
 docker compose up -d --build --force-recreate dashboard dashboard-scheduler
 
 # 觸發所有 dashboard 排程立即跑一次
-docker compose exec -T dashboard python -c "from datetime import datetime; \
-  from app import app, db, EconomicFetchJob; \
+docker compose exec -T dashboard python -c "from app import app, db, EconomicFetchJob, now_gmt8; \
   ctx=app.app_context(); ctx.push(); \
-  EconomicFetchJob.query.update({'next_run_at': datetime.utcnow()}, synchronize_session=False); \
+  EconomicFetchJob.query.update({'next_run_at': now_gmt8()}, synchronize_session=False); \
   db.session.commit()"
 
 # 看排程 log

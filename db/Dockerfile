@@ -25,7 +25,8 @@ RUN apt-get update \
 # - 把 SQL Server 帶回前景
 # 預設 CMD 沿用 base image 的 /opt/mssql/bin/sqlservr
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh \
+    && chmod +x /usr/local/bin/entrypoint.sh
 
 USER mssql
 

@@ -24,11 +24,11 @@
         <div class="form-row">
             <label for="provider">Provider</label>
             <select id="provider" name="provider">
-                {% for provider in ['mock', 'fred', 'bls', 'taiwan', 'metals'] %}
+                {% for provider in ['mock', 'fred', 'bls', 'yfinance', 'yfinance_options', 'twse_openapi', 'derived', 'cboe', 'cnn_official_fear_greed', 'taiwan_economic', 'taifex', 'taiwan', 'metals'] %}
                 <option value="{{ provider }}" {% if form_data.get('provider') == provider %}selected{% endif %}>{{ provider }}</option>
                 {% endfor %}
             </select>
-            <small>第一版只有 mock 會產生假資料；其他 provider 先保留給 API 串接。</small>
+            <small>此頁只管理設定；實際抓取由 dashboard / dashboard-scheduler 容器執行。後台手動執行目前僅支援 mock。</small>
         </div>
     </div>
 

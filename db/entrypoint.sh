@@ -58,7 +58,7 @@ else
             *.sql)
                 echo "[entrypoint] 執行 SQL: $f"
                 # -f 65001 = 告訴 sqlcmd 檔案是 UTF-8 編碼
-                $SQLCMD -S localhost -U sa -P "${SA_PASSWORD}" -i "$f" -C -No -f 65001
+                $SQLCMD -S localhost -U sa -P "${SA_PASSWORD}" -i "$f" -C -No -f 65001 -b
                 ;;
             *.sh)
                 echo "[entrypoint] 執行 SH: $f"

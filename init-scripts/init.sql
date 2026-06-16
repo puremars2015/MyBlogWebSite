@@ -72,8 +72,8 @@ BEGIN
         last_login_at DATETIME,
         failed_login_count INT DEFAULT 0,
         locked_until DATETIME,
-        created_at DATETIME DEFAULT GETDATE(),
-        updated_at DATETIME DEFAULT GETDATE()
+        created_at DATETIME DEFAULT DATEADD(HOUR, 8, GETUTCDATE()),
+        updated_at DATETIME DEFAULT DATEADD(HOUR, 8, GETUTCDATE())
     );
 END
 GO
@@ -92,7 +92,7 @@ IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('members') 
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('members') AND name = 'locked_until')
     ALTER TABLE members ADD locked_until DATETIME;
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('members') AND name = 'updated_at')
-    ALTER TABLE members ADD updated_at DATETIME DEFAULT GETDATE();
+    ALTER TABLE members ADD updated_at DATETIME DEFAULT DATEADD(HOUR, 8, GETUTCDATE());
 GO
 
 -- ============================================================
@@ -110,8 +110,8 @@ BEGIN
         category_id INT REFERENCES categories(id),
         is_published BIT DEFAULT 1,
         published_at DATETIME,
-        created_at DATETIME DEFAULT GETDATE(),
-        updated_at DATETIME DEFAULT GETDATE()
+        created_at DATETIME DEFAULT DATEADD(HOUR, 8, GETUTCDATE()),
+        updated_at DATETIME DEFAULT DATEADD(HOUR, 8, GETUTCDATE())
     );
 END
 GO
@@ -131,8 +131,8 @@ BEGIN
         image_url NVARCHAR(500),
         category_id INT REFERENCES product_categories(id),
         is_active BIT DEFAULT 1,
-        created_at DATETIME DEFAULT GETDATE(),
-        updated_at DATETIME DEFAULT GETDATE()
+        created_at DATETIME DEFAULT DATEADD(HOUR, 8, GETUTCDATE()),
+        updated_at DATETIME DEFAULT DATEADD(HOUR, 8, GETUTCDATE())
     );
 END
 GO
@@ -181,8 +181,8 @@ BEGIN
         recipient_phone NVARCHAR(30),
         shipping_address NVARCHAR(500),
         note NVARCHAR(500),
-        created_at DATETIME DEFAULT GETDATE(),
-        updated_at DATETIME DEFAULT GETDATE()
+        created_at DATETIME DEFAULT DATEADD(HOUR, 8, GETUTCDATE()),
+        updated_at DATETIME DEFAULT DATEADD(HOUR, 8, GETUTCDATE())
     );
 END
 GO
@@ -274,8 +274,8 @@ BEGIN
         last_login_at DATETIME,
         failed_login_count INT DEFAULT 0,
         locked_until DATETIME,
-        created_at DATETIME DEFAULT GETDATE(),
-        updated_at DATETIME DEFAULT GETDATE()
+        created_at DATETIME DEFAULT DATEADD(HOUR, 8, GETUTCDATE()),
+        updated_at DATETIME DEFAULT DATEADD(HOUR, 8, GETUTCDATE())
     );
 END
 GO
