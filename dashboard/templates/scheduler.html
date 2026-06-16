@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}排程狀態 - 至成投資學院{% endblock %}
+
+{% block content %}
+<section class="hero scheduler-hero">
+    <p class="hero-eyebrow">Scheduler Monitor</p>
+    <h1>資料排程運行狀況</h1>
+    <p>檢查每個資料來源 job 的最近執行結果、下次執行時間與錯誤訊息。</p>
+    <div class="hero-meta">
+        <span>檢查時間: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+        <span>總排程: {{ counts.total }}</span>
+        <span>啟用中: {{ counts.active }}</span>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="status-summary-grid">
+        <article class="status-summary-card status-success">
+            <span>成功</span>
+            <strong>{{ counts.success }}</strong>
+        </article>
+        <article class="status-summary-card status-error">
+            <span>錯誤</span>
+            <strong>{{ counts.error }}</strong>
+        </article>
+        <article class="status-summary-card status-pending">
+            <span>尚未完成/等待</span>
+            <strong>{{ counts.pending }}</strong>
+        </article>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="section-heading">
+        <div>
+            <p class="section-kicker">Jobs</p>
+            <h2>排程列表</h2>
+        </div>
+        <span class="section-count">{{ rows|length }} 個 jobs</span>
+    </div>
+    <div class="scheduler-table-wrap">
+        <table class="scheduler-table">
+            <thead>
+                <tr>
+                    <th>狀態</th>
+                    <th>名稱</th>
+                    <th>Provider</th>
+                    <th>Series</th>
+                    <th>上次執行</th>
+                    <th>下次執行</th>
+                    <th>訊息</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td><span class="run-badge run-{{ row.status }}">{{ row.status }}</span></td>
+                    <td>
+                        <strong>{{ row.job.name }}</strong>
+                        {% if not row.job.is_active %}<small>停用</small>{% endif %}
+                    </td>
+                    <td>{{ row.job.provider }}</td>
+                    <td><code>{{ row.job.series_code or '-' }}</code></td>
+                    <td>{{ row.job.last_run_at.strftime('%Y-%m-%d %H:%M') if row.job.last_run_at else '-' }}</td>
+                    <td>{{ row.job.next_run_at.strftime('%Y-%m-%d %H:%M') if row.job.next_run_at else '-' }}</td>
+                    <td class="scheduler-message">{{ row.message or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="section-heading">
+        <div>
+            <p class="section-kicker">Runs</p>
+            <h2>最近執行紀錄</h2>
+        </div>
+        <span class="section-count">最多 50 筆</span>
+    </div>
+    <div class="run-list">
+        {% for run in recent_runs %}
+        <article class="run-item">
+            <span class="run-badge run-{{ run.status }}">{{ run.status }}</span>
+            <div>
+                <strong>Job #{{ run.job_id }}</strong>
+                <p>{{ run.message or '-' }}</p>
+                <small>{{ run.started_at.strftime('%Y-%m-%d %H:%M:%S') }}{% if run.finished_at %} - {{ run.finished_at.strftime('%H:%M:%S') }}{% endif %}</small>
+            </div>
+        </article>
+        {% else %}
+        <article class="run-item">
+            <span class="run-badge run-seeded">empty</span>
+            <div>
+                <strong>尚無執行紀錄</strong>
+                <p>scheduler 啟動並跑過 job 後會出現在這裡。</p>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

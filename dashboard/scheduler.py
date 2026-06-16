@@ -1,10 +1,15 @@
+import logging
 import os
 import time
 from datetime import datetime, timedelta
-from decimal import Decimal
 
 from app import (EconomicFetchJob, EconomicFetchRun, EconomicObservation,
     EconomicSeries, app, db, ensure_schema_and_seed)
+from providers import get_provider
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=os.getenv('DASHBOARD_LOG_LEVEL', 'INFO'))
 
 
 POLL_SECONDS = int(os.getenv('DASHBOARD_SCHEDULER_POLL_SECONDS', '30'))
@@ -27,24 +32,22 @@ def next_run_for(job, now):
     return candidate
 
 
-def run_mock_provider(job):
-    series = EconomicSeries.query.filter_by(code=job.series_code).first()
-    if not series:
-        return f'Series {job.series_code} not found; mock job skipped.'
+def _resolve_series(job):
+    if not job.series_code:
+        return None
+    return EconomicSeries.query.filter_by(code=job.series_code).first()
 
-    latest = EconomicObservation.query.filter_by(series_id=series.id).order_by(EconomicObservation.observed_at.desc()).first()
-    base = Decimal(latest.value if latest else 0)
-    bump = Decimal('0.01') if series.unit == '%' else Decimal('1.00')
-    value = base + bump
-    db.session.add(EconomicObservation(
+
+def _apply_result(series, result):
+    obs = EconomicObservation(
         series_id=series.id,
-        observed_at=datetime.utcnow(),
-        value=value,
-        previous_value=base,
-        change_label='Mock 更新',
-        status_label='up'
-    ))
-    return f'Mock updated {series.code} from {base} to {value}.'
+        observed_at=result['observed_at'],
+        value=result['value'],
+        previous_value=result.get('previous_value'),
+        change_label=result.get('change_label', ''),
+        status_label=result.get('status_label', 'flat'),
+    )
+    db.session.add(obs)
 
 
 def execute_job(job):
@@ -54,19 +57,26 @@ def execute_job(job):
     db.session.flush()
 
     try:
-        if job.provider == 'mock':
-            message = run_mock_provider(job)
-        else:
-            message = f'Provider {job.provider} is not implemented. API keys should be read from .env.'
+        series = _resolve_series(job)
+        if series is None:
+            raise ValueError(f'job {job.name}: series {job.series_code} not found')
+
+        provider = get_provider(job.provider)
+        result = provider.fetch(series, job)
+        if not result:
+            raise RuntimeError(f'job {job.name}: provider returned no data')
+
+        _apply_result(series, result)
         run.status = 'success'
-        run.message = message
+        run.message = f'{provider.name} updated {series.code}: {result["value"]}'
         job.last_status = 'success'
-        job.last_message = message
+        job.last_message = run.message
     except Exception as exc:
+        logger.exception('job %s failed', job.name)
         run.status = 'error'
-        run.message = str(exc)
+        run.message = str(exc)[:480]
         job.last_status = 'error'
-        job.last_message = str(exc)
+        job.last_message = run.message
     finally:
         now = datetime.utcnow()
         run.finished_at = now

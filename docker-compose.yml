@@ -38,6 +38,10 @@ services:
       - app-network
     expose:
       - "5000"
+    # 開發用:直接把 port 5000 expose 出來,繞過 nginx reverse proxy
+    # 上正式環境記得拿掉這段
+    ports:
+      - "5000:5000"
 
   shop:
     build:
@@ -61,6 +65,10 @@ services:
       - app-network
     expose:
       - "5001"
+    # 開發用:直接把 port 5001 expose 出來,繞過 nginx reverse proxy
+    # 上正式環境記得拿掉這段
+    ports:
+      - "5001:5001"
 
   admin:
     build:
@@ -109,6 +117,10 @@ services:
       - app-network
     expose:
       - "5003"
+    # 開發用:直接把 port 5003 expose 出來,繞過 nginx reverse proxy
+    # 上正式環境記得拿掉這段
+    ports:
+      - "5003:5003"
 
   dashboard-scheduler:
     build:
