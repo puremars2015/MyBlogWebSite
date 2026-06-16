@@ -4,8 +4,8 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     image: myblogwebsite-nginx
-    ports:
-      - "80:80"
+    # 對外 80 改由 cloudflared tunnel 處理
+    # 若需要在本機直接打 nginx 驗證,再暫時加回 ports: ["80:80"]
     depends_on:
       - blog
       - shop
@@ -15,6 +15,27 @@ services:
       - app-network
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    expose:
+      - "80"
+
+  cloudflared:
+    build:
+      context: ./cloudflared
+      dockerfile: Dockerfile
+    image: myblogwebsite-cloudflared
+    container_name: myblogwebsite-cloudflared
+    restart: unless-stopped
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN:?TUNNEL_TOKEN is required for named tunnel mode}
+    # Named tunnel 模式:token 從 .env 的 TUNNEL_TOKEN 帶入
+    # token 內含 tunnel 認證 + routing 設定,不需要再掛 config.yml
+    command: ["tunnel", "--no-autoupdate", "run", "--token", "${TUNNEL_TOKEN}"]
+    # 想暫時退回 quick tunnel 模式,把上面 command 改成:
+    #   command: ["tunnel", "--no-autoupdate", "--url", "http://nginx:80"]
+    depends_on:
+      - nginx
+    networks:
+      - app-network
 
   blog:
     build:

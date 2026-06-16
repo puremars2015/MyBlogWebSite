@@ -3,10 +3,10 @@ from .fred import FREDProvider
 from .bls import BLSProvider
 from .yfinance import YFinanceProvider
 from .yfinance_options import YFinanceOptionsProvider
-from .cnn_fear_greed import CNNFearGreedProvider
 from .twse_openapi import TWSEOpenAPIProvider
 from .derived import DerivedProvider
 from .cboe import CBOEProvider
+from .cnn_official import CNNOfficialFearGreedProvider
 from .taiwan_economic import TaiwanEconomicProvider
 from .taifex import TAIFEXProvider
 
@@ -16,10 +16,10 @@ _REGISTRY = {
     'bls': BLSProvider,
     'yfinance': YFinanceProvider,
     'yfinance_options': YFinanceOptionsProvider,
-    'cnn_fear_greed': CNNFearGreedProvider,
     'twse_openapi': TWSEOpenAPIProvider,
     'derived': DerivedProvider,
     'cboe': CBOEProvider,
+    'cnn_official_fear_greed': CNNOfficialFearGreedProvider,
     'taiwan_economic': TaiwanEconomicProvider,
     'taifex': TAIFEXProvider,
 }

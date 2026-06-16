@@ -193,7 +193,7 @@ SERIES_SEED = [
     {
         'code': 'fear_greed', 'name': 'Fear & Greed Index',
         'category': '市場情緒', 'description': 'CNN 恐懼與貪婪指數 (0-100)',
-        'unit': '', 'source_name': 'alternative.me', 'sort_order': 1,
+        'unit': '', 'source_name': 'CNN', 'sort_order': 1,
         'region': 'US', 'frequency': 'daily', 'transformation': 'level',
         'fred_code': '', 'yfinance_symbol': '',
     },
@@ -334,7 +334,7 @@ JOB_SEED = [
     {'name': 'CBOE: Put/Call Ratio', 'provider': 'cboe', 'series_code': 'put_call_ratio',
      'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '20:30',
      'yfinance_symbol': 'SPY'},
-    {'name': 'CNN: Fear & Greed', 'provider': 'cnn_fear_greed', 'series_code': 'fear_greed',
+    {'name': 'CNN Official: Fear & Greed', 'provider': 'cnn_official_fear_greed', 'series_code': 'fear_greed',
      'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '09:00'},
     {'name': 'TWSE: 外資買賣超', 'provider': 'twse_openapi', 'series_code': 'tw_foreign_net',
      'schedule_type': 'daily', 'interval_minutes': 1440, 'daily_time': '17:00'},
@@ -520,6 +520,10 @@ def _cleanup_obsolete_jobs():
         db.and_(
             EconomicFetchJob.series_code.in_(['sp500', 'nasdaq', 'twse_index']),
             EconomicFetchJob.provider == 'yfinance',
+        ),
+        db.and_(
+            EconomicFetchJob.series_code == 'fear_greed',
+            EconomicFetchJob.provider == 'cnn_fear_greed',
         ),
     )).all()
     if not obsolete:
