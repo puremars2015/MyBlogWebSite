@@ -793,6 +793,52 @@ def api_summary():
     })
 
 
+@app.route('/api/agent/dashboard')
+def api_agent_dashboard():
+    ensure_schema_and_seed()
+    cards = dashboard_cards()
+    now = datetime.utcnow()
+
+    categories_payload = {}
+    for card in cards:
+        category = card['series'].category or '未分類'
+        categories_payload.setdefault(category, []).append({
+            'code': card['series'].code,
+            'name': card['series'].name,
+            'description': card['series'].description or '',
+            'unit': card['series'].unit or '',
+            'source_name': card['series'].source_name or '',
+            'value': card['value'],
+            'previous_value': card['previous_value'],
+            'change_label': card['observation'].change_label if card['observation'] else None,
+            'status_label': card['observation'].status_label if card['observation'] else None,
+            'observed_at': card['observation'].observed_at.isoformat() if card['observation'] else None,
+            'has_data': card['has_data'],
+            'temperature': card['temperature'],
+        })
+
+    return jsonify({
+        'generated_at': now.isoformat() + 'Z',
+        'note': '此 API 提供給 AI Agent 一次讀取所有 dashboard 指標；has_data=false 表示尚未抓到資料。',
+        'temperature_summary': summarize_temperature(cards),
+        'categories': categories_payload,
+        'items': [{
+            'code': card['series'].code,
+            'name': card['series'].name,
+            'category': card['series'].category,
+            'value': card['value'],
+            'previous_value': card['previous_value'],
+            'unit': card['series'].unit,
+            'change_label': card['observation'].change_label if card['observation'] else None,
+            'status_label': card['observation'].status_label if card['observation'] else None,
+            'observed_at': card['observation'].observed_at.isoformat() if card['observation'] else None,
+            'source_name': card['series'].source_name,
+            'has_data': card['has_data'],
+            'temperature': card['temperature'],
+        } for card in cards],
+    })
+
+
 @app.route('/api/txf_price', methods=['GET'])
 def api_txf_price():
     ensure_schema_and_seed()
